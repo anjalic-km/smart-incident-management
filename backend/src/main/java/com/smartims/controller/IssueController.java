@@ -2,12 +2,15 @@ package com.smartims.controller;
 
 import com.smartims.dto.CreateIssueRequest;
 import com.smartims.dto.UpdateIssueStatusRequest;
+import com.smartims.entity.Issue;
 import com.smartims.service.IssueService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/issues")
@@ -44,6 +47,13 @@ public class IssueController {
 
         return "Issue status updated successfully";
     }
+
+    @GetMapping("/project/{projectId}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ENGINEER','USER')")
+    public List<Issue> getIssuesByProject(@PathVariable Long projectId) {
+        return issueService.getIssuesByProject(projectId);
+    }
+
 
 }
 

@@ -12,9 +12,11 @@ import com.smartims.repository.ProjectRepository;
 import com.smartims.repository.UserRepository;
 import com.smartims.service.IssueService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -57,6 +59,36 @@ public class IssueServiceImpl implements IssueService {
                 .build();
 
         issueRepository.save(issue);
+    }
+
+    @Override
+    public List<Issue> getIssuesByProject(Long projectId) {
+
+        User currentUser = userRepository.findByEmail(
+                SecurityContextHolder.getContext().getAuthentication().getName()
+        ).orElseThrow(() -> new RuntimeException("User not found"));
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        if (currentUser.getRole().name().equals("ADMIN")) {
+            return issueRepository.findByProject(project);
+        }
+
+        if (currentUser.getRole().name().equals("MANAGER")
+                && project.getManager().equals(currentUser)) {
+            return issueRepository.findByProject(project);
+        }
+
+        if (currentUser.getRole().name().equals("ENGINEER")) {
+            return issueRepository.findByProjectAndAssignedEngineer(project, currentUser);
+        }
+
+        if (project.getMembers().contains(currentUser)) {
+            return issueRepository.findByProject(project);
+        }
+
+        throw new RuntimeException("Access denied for this project");
     }
 
 

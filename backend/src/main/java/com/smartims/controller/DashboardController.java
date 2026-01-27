@@ -47,4 +47,12 @@ public class DashboardController {
         return issueRepository.findBySlaBreachedTrue();
     }
 
+    @GetMapping("/project/{projectId}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ENGINEER','USER')")
+    public DashboardSummaryResponse getProjectDashboard(
+            @PathVariable Long projectId) {
+        return dashboardService.getProjectDashboard(projectId);
+    }
+
+
 }

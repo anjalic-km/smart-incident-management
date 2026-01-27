@@ -1,6 +1,7 @@
 package com.smartims.repository;
 
 import com.smartims.entity.Issue;
+import com.smartims.entity.Project;
 import com.smartims.enums.IssueStatus;
 import com.smartims.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,4 +29,16 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
     List<Object[]> countByPriorityGroup();
 
     List<Issue> findBySlaBreachedTrue();
+
+    List<Issue> findByProject(Project project);
+
+    List<Issue> findByProjectAndAssignedEngineer(Project project, User engineer);
+
+    long countByProject(Project project);
+
+    long countByProjectAndStatus(Project project, IssueStatus status);
+
+    long countByProjectAndSlaBreachedTrue(Project project);
+
+
 }

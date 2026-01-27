@@ -1,41 +1,27 @@
 package com.smartims.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class DashboardSummaryResponse {
 
     private long total;
     private long open;
     private long inProgress;
     private long closed;
+    private long slaBreached;
 
-    public long getTotal() {
-        return total;
+    public void setTotalIssues(long l) {
     }
 
-    public void setTotal(long total) {
-        this.total = total;
+    public void setOpenIssues(long l) {
     }
 
-    public long getOpen() {
-        return open;
+    public void setInProgressIssues(long l) {
     }
 
-    public void setOpen(long open) {
-        this.open = open;
-    }
-
-    public long getInProgress() {
-        return inProgress;
-    }
-
-    public void setInProgress(long inProgress) {
-        this.inProgress = inProgress;
-    }
-
-    public long getClosed() {
-        return closed;
-    }
-
-    public void setClosed(long closed) {
-        this.closed = closed;
+    public void setClosedIssues(long l) {
     }
 }

@@ -14,4 +14,7 @@ public interface DashboardService {
     List<KeyValueCountResponse> getSeverityDistribution();
 
     List<KeyValueCountResponse> getPriorityDistribution();
+
+    DashboardSummaryResponse getProjectDashboard(Long projectId);
+
 }
