@@ -4,6 +4,7 @@ import com.smartims.enums.IssueStatus;
 import com.smartims.enums.Severity;
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "issues")
@@ -39,4 +40,13 @@ public class Issue {
     @ManyToOne
     @JoinColumn(name = "assigned_engineer_id")
     private User assignedEngineer;
+
+
+    @Column
+    private LocalDateTime createdAt;
+
+    private LocalDateTime resolvedAt;
+
+    private boolean slaBreached;
+
 }

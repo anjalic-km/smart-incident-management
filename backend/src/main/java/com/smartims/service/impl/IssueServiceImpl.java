@@ -10,6 +10,8 @@ import com.smartims.service.IssueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class IssueServiceImpl implements IssueService {
@@ -31,6 +33,10 @@ public class IssueServiceImpl implements IssueService {
                 .status(IssueStatus.OPEN)
                 .createdBy(createdBy)
                 .build();
+
+        issue.setCreatedAt(LocalDateTime.now());
+        issue.setSlaBreached(false);
+
 
         issueRepository.save(issue);
     }

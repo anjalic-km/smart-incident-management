@@ -29,11 +29,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneral(Exception ex) {
+
+        // 👇 THIS IS THE MOST IMPORTANT LINE
+        ex.printStackTrace();
+
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "Something went wrong. Please try again."
+                ex.getClass().getSimpleName() + ": " + ex.getMessage()
         );
     }
+
 
     private ResponseEntity<?> buildResponse(HttpStatus status, String message) {
         Map<String, Object> body = new LinkedHashMap<>();
