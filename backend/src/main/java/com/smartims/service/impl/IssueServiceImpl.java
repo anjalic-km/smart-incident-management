@@ -2,10 +2,14 @@ package com.smartims.service.impl;
 
 import com.smartims.dto.CreateIssueRequest;
 import com.smartims.entity.Issue;
+import com.smartims.entity.Project;
+import com.smartims.entity.User;
 import com.smartims.enums.IssueStatus;
 import com.smartims.exception.ResourceNotFoundException;
 import com.smartims.exception.UnauthorizedException;
 import com.smartims.repository.IssueRepository;
+import com.smartims.repository.ProjectRepository;
+import com.smartims.repository.UserRepository;
 import com.smartims.service.IssueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,8 @@ import java.time.LocalDateTime;
 public class IssueServiceImpl implements IssueService {
 
     private final IssueRepository issueRepository;
+    private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
 
     @Override
     public long countByStatus(IssueStatus status) {
@@ -26,19 +32,33 @@ public class IssueServiceImpl implements IssueService {
     @Override
     public void createIssue(CreateIssueRequest request, String createdBy) {
 
+        User currentUser = userRepository.findByEmail(createdBy)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Project project = projectRepository.findById(request.getProjectId())
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
+        if (!currentUser.getRole().name().equals("ADMIN")
+                && !project.getManager().equals(currentUser)
+                && !project.getMembers().contains(currentUser)) {
+            throw new RuntimeException("You are not allowed to create issue for this project");
+        }
+
         Issue issue = Issue.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .severity(request.getSeverity())
-                .priorityLevel(request.getPriorityLevel()) // 🔥 THIS LINE WAS MISSING
+                .priorityLevel(request.getPriorityLevel())
                 .status(IssueStatus.OPEN)
                 .createdBy(createdBy)
+                .project(project)
                 .createdAt(LocalDateTime.now())
                 .slaBreached(false)
                 .build();
 
         issueRepository.save(issue);
     }
+
 
     @Override
     public void updateIssueStatus(
@@ -51,7 +71,6 @@ public class IssueServiceImpl implements IssueService {
 
         IssueStatus currentStatus = issue.getStatus();
 
-        // 🔒 Role-based workflow rules
         switch (role) {
             case "ROLE_ENGINEER" -> {
                 if (currentStatus == IssueStatus.OPEN &&
@@ -76,7 +95,7 @@ public class IssueServiceImpl implements IssueService {
             }
 
             case "ROLE_ADMIN" -> {
-                issue.setStatus(newStatus); // Admin override
+                issue.setStatus(newStatus);
             }
 
             default -> throw new UnauthorizedException("Role not allowed to update issue status");

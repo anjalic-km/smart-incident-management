@@ -10,5 +10,6 @@ public class CreateIssueRequest {
     private String description;
     private Severity severity;
     private String priorityLevel;
+    private Long projectId;
 
 }

@@ -37,7 +37,11 @@ public class SlaServiceImpl implements SlaService {
             return;
         }
 
-        slaPolicyRepository.findByPriorityLevel(issue.getPriorityLevel())
+        slaPolicyRepository
+                .findByProjectAndPriorityLevel(
+                        issue.getProject(),
+                        issue.getPriorityLevel()
+                )
                 .ifPresent(policy -> {
 
                     long elapsedMinutes = Duration.between(
@@ -57,5 +61,6 @@ public class SlaServiceImpl implements SlaService {
                     }
                 });
     }
+
 
 }
