@@ -41,6 +41,9 @@ public class Issue {
     @JoinColumn(name = "assigned_engineer_id")
     private User assignedEngineer;
 
+    @ManyToOne
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
 
     @Column
     private LocalDateTime createdAt;
