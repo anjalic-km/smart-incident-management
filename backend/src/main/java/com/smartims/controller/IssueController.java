@@ -54,6 +54,21 @@ public class IssueController {
         return issueService.getIssuesByProject(projectId);
     }
 
+    @PutMapping("/{issueId}/assign/{engineerId}")
+    @PreAuthorize("hasRole('MANAGER')")
+    public void assignEngineer(
+            @PathVariable Long issueId,
+            @PathVariable Long engineerId) {
+        issueService.assignEngineer(issueId, engineerId);
+    }
+
+    @PutMapping("/{issueId}/auto-assign")
+    @PreAuthorize("hasRole('MANAGER')")
+    public void autoAssignEngineer(@PathVariable Long issueId) {
+        issueService.autoAssignEngineer(issueId);
+    }
+
+
 
 }
 

@@ -20,4 +20,8 @@ public interface IssueService {
             IssueStatus newStatus,
             String role
     );
+
+    void assignEngineer(Long issueId, Long engineerId);
+
+    void autoAssignEngineer(Long issueId);
 }

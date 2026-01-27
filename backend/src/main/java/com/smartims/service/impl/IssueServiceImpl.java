@@ -12,11 +12,13 @@ import com.smartims.repository.ProjectRepository;
 import com.smartims.repository.UserRepository;
 import com.smartims.service.AuditLogService;
 import com.smartims.service.IssueService;
+import com.smartims.service.NotificationInboxService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -26,8 +28,8 @@ public class IssueServiceImpl implements IssueService {
     private final IssueRepository issueRepository;
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
+    private final NotificationInboxService notificationInboxService;
     private final AuditLogService auditLogService;
-
 
     @Override
     public long countByStatus(IssueStatus status) {
@@ -62,6 +64,12 @@ public class IssueServiceImpl implements IssueService {
                 .build();
 
         issueRepository.save(issue);
+
+        notificationInboxService.notifyForIssueEvent(
+                "ISSUE_CREATED",
+                "New issue created: " + issue.getTitle(),
+                issue
+        );
 
         auditLogService.log(
                 "CREATE_ISSUE",
@@ -146,6 +154,13 @@ public class IssueServiceImpl implements IssueService {
 
         issueRepository.save(issue);
 
+        notificationInboxService.notifyForIssueEvent(
+                "ISSUE_STATUS_UPDATED",
+                "Issue '" + issue.getTitle() + "' status changed to " + newStatus,
+                issue
+        );
+
+
         auditLogService.log(
                 "UPDATE_ISSUE_STATUS",
                 "ISSUE",
@@ -155,4 +170,86 @@ public class IssueServiceImpl implements IssueService {
 
     }
 
+    @Override
+    public void assignEngineer(Long issueId, Long engineerId) {
+
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new RuntimeException("Issue not found"));
+
+        User engineer = userRepository.findById(engineerId)
+                .orElseThrow(() -> new RuntimeException("Engineer not found"));
+
+        // Role check
+        if (!engineer.getRole().name().equals("ENGINEER")) {
+            throw new RuntimeException("User is not an engineer");
+        }
+
+        // Project membership check
+        if (!issue.getProject().getMembers().contains(engineer)) {
+            throw new RuntimeException("Engineer is not part of this project");
+        }
+
+        issue.setAssignedEngineer(engineer);
+        issueRepository.save(issue);
+
+        notificationInboxService.notifyForIssueEvent(
+                "ISSUE_ASSIGNED",
+                "Issue '" + issue.getTitle() + "' assigned to engineer " + engineer.getEmail(),
+                issue
+        );
+
+        auditLogService.log(
+                "ASSIGN_ENGINEER",
+                "ISSUE",
+                issue.getId(),
+                "Assigned to engineer " + engineer.getEmail()
+        );
+    }
+
+
+    @Override
+    public void autoAssignEngineer(Long issueId) {
+
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new RuntimeException("Issue not found"));
+
+        Project project = issue.getProject();
+
+        // Get engineers in this project
+        List<User> engineers = project.getMembers()
+                .stream()
+                .filter(user -> user.getRole().name().equals("ENGINEER"))
+                .toList();
+
+        if (engineers.isEmpty()) {
+            throw new RuntimeException("No engineers available in project");
+        }
+
+        // Select engineer with least OPEN issues
+        User selectedEngineer = engineers.stream()
+                .min(Comparator.comparingLong(
+                        engineer ->
+                                issueRepository.countByAssignedEngineerAndStatus(
+                                        engineer, IssueStatus.OPEN
+                                )
+                ))
+                .orElseThrow();
+
+        issue.setAssignedEngineer(selectedEngineer);
+        issueRepository.save(issue);
+
+        notificationInboxService.notifyForIssueEvent(
+                "ISSUE_AUTO_ASSIGNED",
+                "Issue '" + issue.getTitle() + "' auto-assigned to engineer "
+                        + selectedEngineer.getEmail(),
+                issue
+        );
+
+        auditLogService.log(
+                "AUTO_ASSIGN_ENGINEER",
+                "ISSUE",
+                issue.getId(),
+                "Auto-assigned to engineer " + selectedEngineer.getEmail()
+        );
+    }
 }

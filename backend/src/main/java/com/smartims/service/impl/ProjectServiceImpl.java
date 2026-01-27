@@ -7,6 +7,7 @@ import com.smartims.entity.User;
 import com.smartims.repository.ProjectRepository;
 import com.smartims.repository.UserRepository;
 import com.smartims.service.AuditLogService;
+import com.smartims.service.NotificationInboxService;
 import com.smartims.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -23,6 +24,7 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final AuditLogService auditLogService;
+    private final NotificationInboxService notificationInboxService;
 
 
     @Override
@@ -41,6 +43,15 @@ public class ProjectServiceImpl implements ProjectService {
                 .build();
 
         projectRepository.save(project);
+
+        notificationInboxService.notifyForProjectEvent(
+                "PROJECT_MEMBER_ADDED",
+                "User added to project " + project.getName(),
+                project
+        );
+
+
+
 
         auditLogService.log(
                 "CREATE_PROJECT",

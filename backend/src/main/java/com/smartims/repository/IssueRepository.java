@@ -40,5 +40,17 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
 
     long countByProjectAndSlaBreachedTrue(Project project);
 
+    long countByAssignedEngineerAndStatus(User engineer, IssueStatus status);
+
+    long countByAssignedEngineerAndStatusIn(
+            User engineer,
+            List<IssueStatus> statuses
+    );
+
+    long countByProjectInAndStatusIn(
+            List<Project> projects,
+            List<IssueStatus> statuses
+    );
+
 
 }

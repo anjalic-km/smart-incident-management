@@ -4,6 +4,7 @@ import com.smartims.entity.Issue;
 import com.smartims.enums.IssueStatus;
 import com.smartims.repository.SlaPolicyRepository;
 import com.smartims.service.AuditLogService;
+import com.smartims.service.NotificationInboxService;
 import com.smartims.service.NotificationService;
 import com.smartims.service.SlaService;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +20,8 @@ import java.time.LocalDateTime;
 public class SlaServiceImpl implements SlaService {
 
     private final SlaPolicyRepository slaPolicyRepository;
-    private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final NotificationInboxService notificationInboxService;
 
     @Override
     public void applySla(Issue issue) {
@@ -54,11 +55,12 @@ public class SlaServiceImpl implements SlaService {
 
                         issue.setSlaBreached(true);
 
-                        notificationService.sendSlaBreachAlert(
-                                issue.getId(),
-                                issue.getTitle(),
-                                issue.getPriorityLevel()
+                        notificationInboxService.notifyForIssueEvent(
+                                "SLA_BREACHED",
+                                "SLA breached for issue: " + issue.getTitle(),
+                                issue
                         );
+
 
                         auditLogService.log(
                                 "SLA_BREACHED",
@@ -72,7 +74,4 @@ public class SlaServiceImpl implements SlaService {
                     }
                 });
     }
-    }
-
-
 }
