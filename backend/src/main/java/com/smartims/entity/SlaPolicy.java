@@ -25,7 +25,7 @@ public class SlaPolicy {
     private String priorityLevel;
 
     @Column(nullable = false)
-    private Integer resolutionTimeMinutes; // 🔥 REQUIRED
+    private Integer resolutionTimeMinutes;
 
     @Column(length = 1000)
     private String description;

@@ -1,15 +1,13 @@
 package com.smartims.controller;
 
-import com.smartims.dto.RegisterRequest;
-import com.smartims.dto.RegisterResponse;
+import com.smartims.dto.*;
 import com.smartims.service.UserService;
+import com.smartims.util.ResponseUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.smartims.dto.LoginRequest;
-import com.smartims.dto.LoginResponse;
-
 
 @RestController
 @RequestMapping("/api/auth")
@@ -18,16 +16,28 @@ public class AuthController {
 
     private final UserService userService;
 
-
     @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public RegisterResponse register(@Valid @RequestBody RegisterRequest request) {
-        return userService.registerUser(request);
+    public ResponseEntity<ApiResponse<RegisterResponse>> register(
+            @Valid @RequestBody RegisterRequest request) {
+
+        RegisterResponse response = userService.registerUser(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(
+                        HttpStatus.CREATED.value(),
+                        "SUCCESS",
+                        "User registered successfully",
+                        response
+                ));
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        return userService.login(request);
-    }
+    public ResponseEntity<ApiResponse<LoginResponse>> login(
+            @Valid @RequestBody LoginRequest request) {
 
+        return ResponseUtil.success(
+                "Login successful",
+                userService.login(request)
+        );
+    }
 }

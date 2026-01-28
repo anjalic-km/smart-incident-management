@@ -3,6 +3,7 @@ package com.smartims.controller;
 import com.smartims.dto.UpdateSlaPolicyRequest;
 import com.smartims.entity.SlaPolicy;
 import com.smartims.repository.SlaPolicyRepository;
+import com.smartims.service.AdminSlaService;
 import com.smartims.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +19,7 @@ public class AdminSlaController {
 
     private final SlaPolicyRepository slaPolicyRepository;
     private final NotificationService notificationService;
+    private final AdminSlaService adminSlaService;
 
 
     @PostMapping
@@ -25,19 +27,20 @@ public class AdminSlaController {
         return slaPolicyRepository.save(policy);
     }
 
-    @PutMapping("/{priorityLevel}")
+    @PutMapping("/{projectId}/{priorityLevel}")
     public SlaPolicy updatePolicy(
+            @PathVariable Long projectId,
             @PathVariable String priorityLevel,
             @RequestBody UpdateSlaPolicyRequest request) {
 
-        SlaPolicy policy = slaPolicyRepository.findByPriorityLevel(priorityLevel)
-                .orElseThrow(() ->
-                        new RuntimeException("SLA policy not found for priority " + priorityLevel)
-                );
-
-        policy.setResolutionTimeMinutes(request.getResolutionTimeMinutes());
-        return slaPolicyRepository.save(policy);
+        return adminSlaService.updatePolicy(
+                projectId,
+                priorityLevel,
+                request
+        );
     }
+
+
 
 
     @GetMapping

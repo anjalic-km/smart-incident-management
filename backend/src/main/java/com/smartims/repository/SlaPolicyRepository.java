@@ -8,8 +8,10 @@ import java.util.Optional;
 
 public interface SlaPolicyRepository extends JpaRepository<SlaPolicy, Long> {
 
-    Optional<SlaPolicy> findByProjectAndPriorityLevel(
-            Project project,
+    Optional<SlaPolicy> findByProjectIdAndPriorityLevel(
+            Long projectId,
             String priorityLevel
     );
+
 }
+

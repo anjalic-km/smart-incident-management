@@ -1,11 +1,14 @@
 package com.smartims.controller;
 
+import com.smartims.dto.ApiResponse;
 import com.smartims.dto.CreateIssueRequest;
 import com.smartims.dto.UpdateIssueStatusRequest;
 import com.smartims.entity.Issue;
 import com.smartims.service.IssueService;
+import com.smartims.util.ResponseUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -21,19 +24,22 @@ public class IssueController {
 
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','USER')")
     @PostMapping
-    public String createIssue(
+    public ResponseEntity<ApiResponse<Void>> createIssue(
             @Valid @RequestBody CreateIssueRequest request,
             Authentication authentication
     ) {
-        String email = authentication.getName(); // from JWT
+        String email = authentication.getName();
 
         issueService.createIssue(request, email);
 
-        return "Issue created successfully";
+        return ResponseUtil.success(
+                "Issue created successfully",
+                null
+        );
     }
 
     @PutMapping("/{id}/status")
-    public String updateIssueStatus(
+    public ResponseEntity<ApiResponse<Void>> updateIssueStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateIssueStatusRequest request,
             Authentication authentication
@@ -45,31 +51,47 @@ public class IssueController {
 
         issueService.updateIssueStatus(id, request.getStatus(), role);
 
-        return "Issue status updated successfully";
+        return ResponseUtil.success(
+                "Issue status updated successfully",
+                null
+        );
     }
 
     @GetMapping("/project/{projectId}")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ENGINEER','USER')")
-    public List<Issue> getIssuesByProject(@PathVariable Long projectId) {
-        return issueService.getIssuesByProject(projectId);
+    public ResponseEntity<ApiResponse<List<Issue>>> getIssuesByProject(
+            @PathVariable Long projectId) {
+
+        return ResponseUtil.success(
+                "Project issues fetched successfully",
+                issueService.getIssuesByProject(projectId)
+        );
     }
 
     @PutMapping("/{issueId}/assign/{engineerId}")
     @PreAuthorize("hasRole('MANAGER')")
-    public void assignEngineer(
+    public ResponseEntity<ApiResponse<Void>> assignEngineer(
             @PathVariable Long issueId,
             @PathVariable Long engineerId) {
+
         issueService.assignEngineer(issueId, engineerId);
+
+        return ResponseUtil.success(
+                "Engineer assigned successfully",
+                null
+        );
     }
 
     @PutMapping("/{issueId}/auto-assign")
     @PreAuthorize("hasRole('MANAGER')")
-    public void autoAssignEngineer(@PathVariable Long issueId) {
+    public ResponseEntity<ApiResponse<Void>> autoAssignEngineer(
+            @PathVariable Long issueId) {
+
         issueService.autoAssignEngineer(issueId);
+
+        return ResponseUtil.success(
+                "Engineer auto-assigned successfully",
+                null
+        );
     }
-
-
-
 }
-
-

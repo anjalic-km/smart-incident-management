@@ -1,7 +1,10 @@
 package com.smartims.controller;
 
+import com.smartims.dto.ApiResponse;
 import com.smartims.service.WorkloadService;
+import com.smartims.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,17 +15,27 @@ public class WorkloadController {
 
     private final WorkloadService workloadService;
 
-    // 👷 Engineer workload
+    //Engineer workload
     @GetMapping("/engineer/{engineerId}")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','ENGINEER')")
-    public long getEngineerWorkload(@PathVariable Long engineerId) {
-        return workloadService.getEngineerWorkload(engineerId);
+    public ResponseEntity<ApiResponse<Long>> getEngineerWorkload(
+            @PathVariable Long engineerId) {
+
+        return ResponseUtil.success(
+                "Engineer workload fetched successfully",
+                workloadService.getEngineerWorkload(engineerId)
+        );
     }
 
-    // 🧑‍💼 Manager workload
+    //Manager workload
     @GetMapping("/manager/{managerId}")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
-    public long getManagerWorkload(@PathVariable Long managerId) {
-        return workloadService.getManagerWorkload(managerId);
+    public ResponseEntity<ApiResponse<Long>> getManagerWorkload(
+            @PathVariable Long managerId) {
+
+        return ResponseUtil.success(
+                "Manager workload fetched successfully",
+                workloadService.getManagerWorkload(managerId)
+        );
     }
 }

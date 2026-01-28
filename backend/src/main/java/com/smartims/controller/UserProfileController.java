@@ -1,6 +1,9 @@
 package com.smartims.controller;
 
+import com.smartims.dto.ApiResponse;
 import com.smartims.dto.UserProfileResponse;
+import com.smartims.util.ResponseUtil;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserProfileController {
 
     @GetMapping("/api/me")
-    public UserProfileResponse getCurrentUser(Authentication authentication) {
+    public ResponseEntity<ApiResponse<UserProfileResponse>> getCurrentUser(
+            Authentication authentication) {
 
         String email = authentication.getName();
 
@@ -20,6 +24,12 @@ public class UserProfileController {
                 .findFirst()
                 .orElse("UNKNOWN");
 
-        return new UserProfileResponse(email, role);
+        UserProfileResponse response =
+                new UserProfileResponse(email, role);
+
+        return ResponseUtil.success(
+                "Current user profile fetched successfully",
+                response
+        );
     }
 }

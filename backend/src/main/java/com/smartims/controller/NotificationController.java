@@ -1,10 +1,13 @@
 package com.smartims.controller;
 
+import com.smartims.dto.ApiResponse;
 import com.smartims.entity.User;
 import com.smartims.entity.UserNotification;
 import com.smartims.repository.UserNotificationRepository;
 import com.smartims.repository.UserRepository;
+import com.smartims.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,30 +22,45 @@ public class NotificationController {
     private final UserRepository userRepository;
 
     @GetMapping
-    public List<UserNotification> myNotifications(Authentication auth) {
+    public ResponseEntity<ApiResponse<List<UserNotification>>> myNotifications(
+            Authentication auth) {
 
         User user = userRepository.findByEmail(auth.getName())
                 .orElseThrow();
 
-        return userNotificationRepository
-                .findByUserOrderByReceivedAtDesc(user);
+        return ResponseUtil.success(
+                "Notifications fetched successfully",
+                userNotificationRepository
+                        .findByUserOrderByReceivedAtDesc(user)
+        );
     }
 
     @GetMapping("/unread-count")
-    public long unreadCount(Authentication auth) {
+    public ResponseEntity<ApiResponse<Long>> unreadCount(Authentication auth) {
 
         User user = userRepository.findByEmail(auth.getName())
                 .orElseThrow();
 
-        return userNotificationRepository
-                .countByUserAndReadFalse(user);
+        return ResponseUtil.success(
+                "Unread notification count fetched successfully",
+                userNotificationRepository
+                        .countByUserAndReadFalse(user)
+        );
     }
 
     @PutMapping("/{id}/read")
-    public void markAsRead(@PathVariable Long id) {
-        UserNotification un =
-                userNotificationRepository.findById(id).orElseThrow();
-        un.setRead(true);
-        userNotificationRepository.save(un);
+    public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable Long id) {
+
+        UserNotification notification =
+                userNotificationRepository.findById(id)
+                        .orElseThrow();
+
+        notification.setRead(true);
+        userNotificationRepository.save(notification);
+
+        return ResponseUtil.success(
+                "Notification marked as read",
+                null
+        );
     }
 }
