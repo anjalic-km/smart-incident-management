@@ -18,11 +18,21 @@ public class GlobalExceptionHandler {
         );
     }
 
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<ApiResponse<Object>> handleException(Exception ex) {
+//        return ResponseUtil.error(
+//                HttpStatus.INTERNAL_SERVER_ERROR,
+//                "Something went wrong"
+//        );
+//    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleException(Exception ex) {
+        ex.printStackTrace();
         return ResponseUtil.error(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "Something went wrong"
+                ex.getMessage()
         );
     }
+
 }

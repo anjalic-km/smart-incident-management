@@ -3,6 +3,7 @@ package com.smartims.service.impl;
 import com.smartims.dto.RegisterRequest;
 import com.smartims.dto.RegisterResponse;
 import com.smartims.entity.User;
+import com.smartims.enums.Role;
 import com.smartims.exception.BadRequestException;
 import com.smartims.exception.UnauthorizedException;
 import com.smartims.repository.UserRepository;
@@ -34,7 +35,7 @@ public class UserServiceImpl implements UserService {
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(request.getRole())
+                .role(Role.ADMIN)
                 .build();
 
         userRepository.save(user);
