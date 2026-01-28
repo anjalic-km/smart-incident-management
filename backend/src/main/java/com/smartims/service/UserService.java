@@ -10,4 +10,6 @@ public interface UserService {
     RegisterResponse registerUser(RegisterRequest request);
 
     LoginResponse login(LoginRequest request);
+
+    void resetPassword(String email, String newPassword);
 }

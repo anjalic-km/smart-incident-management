@@ -7,5 +7,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public class RegisterResponse {
 
-    private String message;
+    private Long id;
+    private String email;
+    private String role;
 }
+

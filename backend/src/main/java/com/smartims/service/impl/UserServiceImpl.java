@@ -25,25 +25,6 @@ public class UserServiceImpl implements UserService {
     private final JwtService jwtService;
 
     @Override
-    public RegisterResponse registerUser(RegisterRequest request) {
-
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email is already registered");
-        }
-
-        User user = User.builder()
-                .fullName(request.getFullName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.ADMIN)
-                .build();
-
-        userRepository.save(user);
-
-        return new RegisterResponse("User registered successfully");
-    }
-
-    @Override
     public LoginResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
@@ -63,5 +44,40 @@ public class UserServiceImpl implements UserService {
 
         return new LoginResponse(token, user.getRole().name());
     }
+
+    @Override
+    public RegisterResponse registerUser(RegisterRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already registered");
+        }
+
+        User user = User.builder()
+                .fullName(request.getFullName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(request.getRole())
+                .build();
+
+        userRepository.save(user);
+
+        return new RegisterResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name()
+        );
+    }
+
+    @Override
+    public void resetPassword(String email, String newPassword) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+
 
 }
