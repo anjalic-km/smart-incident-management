@@ -3,6 +3,8 @@ package com.smartims.exception;
 import com.smartims.dto.ApiResponse;
 import com.smartims.service.OtpException;
 import com.smartims.util.ResponseUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -13,27 +15,49 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiResponse<?>> handleAuth(AuthenticationException ex) {
-        ex.printStackTrace();
+    public ResponseEntity<ApiResponse<?>> handleAuthenticationException(
+            AuthenticationException ex) {
+
+        log.warn("Authentication failed", ex);
+
         return ResponseUtil.error(
                 HttpStatus.UNAUTHORIZED,
-                "AUTH ERROR → " + ex.getMessage()
+                "Authentication failed"
         );
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<?>> handleAccess(AccessDeniedException ex) {
-        ex.printStackTrace();
+    public ResponseEntity<ApiResponse<?>> handleAccessDeniedException(
+            AccessDeniedException ex) {
+
+        log.warn("Access denied", ex);
+
         return ResponseUtil.error(
                 HttpStatus.FORBIDDEN,
-                "ACCESS DENIED → " + ex.getMessage()
+                "You do not have permission to access this resource"
         );
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<?>> handleRuntime(RuntimeException ex) {
-        ex.printStackTrace();
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ApiResponse<?>> handleAuthException(AuthException ex) {
+
+        log.info("AuthException: {}", ex.getMessage());
+
+        return ResponseUtil.error(
+                HttpStatus.UNAUTHORIZED,
+                ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(OtpException.class)
+    public ResponseEntity<ApiResponse<?>> handleOtpException(OtpException ex) {
+
+        log.info("OtpException: {}", ex.getMessage());
+
         return ResponseUtil.error(
                 HttpStatus.BAD_REQUEST,
                 ex.getMessage()
@@ -41,32 +65,13 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<?>> handle(Exception ex) {
-        ex.printStackTrace();
+    public ResponseEntity<ApiResponse<?>> handleGenericException(Exception ex) {
+
+        log.error("Unhandled exception occurred", ex);
+
         return ResponseUtil.error(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                ex.getClass().getName() + " → " + ex.getMessage()
+                "Something went wrong. Please try again later."
         );
-    }
-
-    @ExceptionHandler(AuthException.class)
-    public ResponseEntity<ApiResponse<?>> handleAuthException(AuthException ex) {
-        return ResponseUtil.error(
-                HttpStatus.BAD_REQUEST,
-                ex.getMessage()
-        );
-    }
-
-    @ExceptionHandler(OtpException.class)
-    public ResponseEntity<ApiResponse<?>> handleOtpException(OtpException ex) {
-        return ResponseEntity
-                .badRequest()
-                .body(new ApiResponse<>(
-                        400,
-                        "FAILED",
-                        ex.getMessage(),
-                        null,
-                        false
-                ));
     }
 }

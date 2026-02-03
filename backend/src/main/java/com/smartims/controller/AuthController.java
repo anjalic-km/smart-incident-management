@@ -8,11 +8,8 @@ import com.smartims.repository.UserRepository;
 import com.smartims.service.OtpService;
 import com.smartims.service.PendingRegisterStore;
 import com.smartims.service.UserService;
-import com.smartims.util.ResponseUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,18 +25,17 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(
+    public ApiResponse<LoginResponse> login(
             @Valid @RequestBody LoginRequest request) {
 
-        return ResponseUtil.success(
-                HttpStatus.OK,
+        return ApiResponse.success(
                 "Login successful",
                 userService.login(request)
         );
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Object>> logout(Authentication authentication) {
+    public ApiResponse<Object> logout(Authentication authentication) {
 
         String email = authentication.getName();
 
@@ -49,8 +45,7 @@ public class AuthController {
         user.incrementTokenVersion();
         userRepository.save(user);
 
-        return ResponseUtil.success(
-                HttpStatus.OK,"Logged out successfully", null);
+        return ApiResponse.success("Logged out successfully", null);
     }
 
 
