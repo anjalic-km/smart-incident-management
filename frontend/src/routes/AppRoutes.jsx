@@ -4,6 +4,8 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import Index from "../pages/public/Index";
 import ForgotPassword from "../pages/auth/ForgotPassword";
+import AuthLayout from "../layouts/AuthLayout";
+
 
 import Unauthorized from "../pages/errors/Unauthorized";
 import NotFound from "../pages/errors/NotFound";
@@ -52,45 +54,61 @@ export default function AppRoutes() {
       <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/maintenance" element={<Maintenance />} />
 
-      {/* Admin */}
+
+      {/* ALL AUTHENTICATED PAGES */}
       <Route
-        path="/admin/dashboard"
+        element={
+          <ProtectedRoute
+            allowedRoles={["ADMIN", "MANAGER", "ENGINEER", "USER"]}
+          >
+            <AuthLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+        <Route path="/engineer/dashboard" element={<EngineerDashboard />} />
+        <Route path="/user/dashboard" element={<UserDashboard />} />
+      </Route>
+      {/* Admin */}
+      {/* <Route
+        path="/admin"
         element={
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminDashboard />
           </ProtectedRoute>
         }
-      />
+      /> */}
 
       {/* Manager */}
-      <Route
+      {/* <Route
         path="/manager/dashboard"
         element={
           <ProtectedRoute allowedRoles={["MANAGER"]}>
             <ManagerDashboard />
           </ProtectedRoute>
         }
-      />
+      /> */}
 
       {/* Engineer */}
-      <Route
+      {/* <Route
         path="/engineer/dashboard"
         element={
           <ProtectedRoute allowedRoles={["ENGINEER"]}>
             <EngineerDashboard />
           </ProtectedRoute>
         }
-      />
+      /> */}
 
       {/* User */}
-      <Route
+      {/* <Route
         path="/user/dashboard"
         element={
           <ProtectedRoute allowedRoles={["USER"]}>
             <UserDashboard />
           </ProtectedRoute>
         }
-      />
+      /> */}
 
       {/* ================= FALLBACK ================= */}
       <Route path="*" element={<NotFound />} />

@@ -64,3 +64,15 @@ export const sendContactForm = (data) => {
     data
   );
 };
+
+export const logoutApi = async (token) => {
+  return axios.post(
+    "http://localhost:8080/api/auth/logout",
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+};

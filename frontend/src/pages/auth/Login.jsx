@@ -5,12 +5,25 @@ import LoadingButton from "../../components/common/LoadingButton";
 import { login } from "../../api/authApi";
 import { showSuccess, showError } from "../../utils/toast";
 import bgImage from "../../assets/background.png";
+import { useEffect } from "react";
+import { useAuth } from "../../context/useAuth";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { token, user } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 🔐 BLOCK BACK/FORWARD TO LOGIN WHEN LOGGED IN
+  useEffect(() => {
+    if (token && user) {
+      navigate(`/${user.role.toLowerCase()}/dashboard`, {
+        replace: true
+      });
+    }
+  }, [token, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,10 +46,11 @@ export default function Login() {
       showSuccess("Welcome to ServicePulse");
 
       navigate(
-        data.role === "ADMIN" ? "/admin" :
-        data.role === "MANAGER" ? "/manager" :
-        data.role === "ENGINEER" ? "/engineer" :
-        "/user"
+        data.role === "ADMIN" ? "/admin/dashboard" :
+        data.role === "MANAGER" ? "/manager/dashboard" :
+        data.role === "ENGINEER" ? "/engineer/dashboard" :
+        "/user/dashboard",
+        { replace: true } // 🔥 CRITICAL
       );
     } catch (err) {
       showError(
