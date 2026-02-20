@@ -20,3 +20,9 @@ export const updateUserLockStatus = (id, locked) =>
 export const changePassword = (currentPassword, newPassword) =>
   api.put("/user/change-password", { currentPassword, newPassword });
 
+export const getProfile = () =>
+  api.get("/user/profile");
+
+export const updateProfile = (payload) =>
+  api.put("/user/profile", payload);
+

@@ -43,6 +43,7 @@ public class Project {
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
 
+    @Builder.Default
     private List<User> members = new ArrayList<>();
 
     @Builder.Default

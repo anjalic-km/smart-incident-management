@@ -36,7 +36,6 @@ public class IssueServiceImpl implements IssueService {
     private final UserRepository userRepository;
     private final NotificationInboxService notificationInboxService;
     private final AuditLogService auditLogService;
-    private final SlaPolicyRepository slaPolicyRepository;
     private final IssueActivityService issueActivityService;
 
     @Override

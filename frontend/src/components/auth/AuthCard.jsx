@@ -8,7 +8,7 @@ export default function AuthCard({ title, subtitle, children, footer }) {
         border border-white/30
         px-20
         py-10
-        -mt-35
+        -mt-52
       "
     >
       <h2 className="text-2xl font-bold text-gray-900 text-center">

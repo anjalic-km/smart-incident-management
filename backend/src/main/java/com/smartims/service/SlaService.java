@@ -6,6 +6,8 @@ import com.smartims.dto.SlaStatusResponse;
 import com.smartims.entity.Issue;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 public interface SlaService {
 
     @Transactional
@@ -16,4 +18,6 @@ public interface SlaService {
     void checkAndMarkBreach(Issue issue);
 
     SlaStatusResponse getSlaStatus(Long issueId);
+
+    List<SlaResponse> getPoliciesForCurrentUser();
 }

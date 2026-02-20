@@ -5,7 +5,6 @@ import com.smartims.dto.CreateProjectRequest;
 import com.smartims.dto.ProjectResponse;
 import com.smartims.dto.UpdateProjectRequest;
 import com.smartims.service.ProjectService;
-import com.smartims.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

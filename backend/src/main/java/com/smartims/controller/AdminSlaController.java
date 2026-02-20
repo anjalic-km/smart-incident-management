@@ -4,10 +4,8 @@ import com.smartims.dto.ApiResponse;
 import com.smartims.dto.SlaCreateRequest;
 import com.smartims.dto.SlaResponse;
 import com.smartims.dto.UpdateSlaPolicyRequest;
-import com.smartims.entity.SlaPolicy;
-import com.smartims.repository.SlaPolicyRepository;
+import com.smartims.mapper.SlaMapper;
 import com.smartims.service.AdminSlaService;
-import com.smartims.service.NotificationService;
 import com.smartims.service.SlaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,11 +17,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/sla")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','MANAGER')")
 public class AdminSlaController {
 
-    private final SlaPolicyRepository slaPolicyRepository;
-    private final NotificationService notificationService;
     private final AdminSlaService adminSlaService;
     private final SlaService slaService;
 
@@ -45,19 +41,40 @@ public class AdminSlaController {
 
 
     @PutMapping("/{projectId}/{priorityLevel}")
-    public SlaPolicy updatePolicy(
+    public ApiResponse<SlaResponse> updatePolicy(
             @PathVariable Long projectId,
             @PathVariable String priorityLevel,
-            @RequestBody UpdateSlaPolicyRequest request) {
+            @RequestBody @Valid UpdateSlaPolicyRequest request) {
 
-        return adminSlaService.updatePolicy(
+        return ApiResponse.success(
+                "SLA policy updated successfully",
+                SlaMapper.toResponse(adminSlaService.updatePolicy(
                 projectId, priorityLevel, request
+                ))
         );
     }
 
     @GetMapping
-    public List<SlaPolicy> getAllPolicies() {
-        return slaPolicyRepository.findAll();
+    public ApiResponse<List<SlaResponse>> getAllPolicies() {
+        List<SlaResponse> policies = slaService.getPoliciesForCurrentUser();
+
+        return ApiResponse.success(
+                "SLA policies fetched successfully",
+                policies
+        );
+    }
+
+    @DeleteMapping("/{projectId}/{priorityLevel}")
+    public ApiResponse<Void> deletePolicy(
+            @PathVariable Long projectId,
+            @PathVariable String priorityLevel
+    ) {
+        adminSlaService.deletePolicy(projectId, priorityLevel);
+
+        return ApiResponse.success(
+                "SLA policy deleted successfully",
+                null
+        );
     }
 
 }

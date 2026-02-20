@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Plus, Trash2, X, SquarePen } from "lucide-react";
 import { getAllProjects, createProject, updateProject, deleteProject } from "../../api/projectApi";
 import { getAllUsers } from "../../api/userApi";
 import { showError, showSuccess } from "../../utils/toast";
@@ -59,6 +59,58 @@ function Badge({ tone = "gray", children }) {
   );
 }
 
+function ConfirmDialog({
+  open,
+  title,
+  message,
+  details,
+  loading,
+  onCancel,
+  onConfirm
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
+      <div className="relative w-full max-w-sm rounded-2xl bg-white shadow-xl">
+        <div className="px-6 pt-6 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-red-100 bg-red-50 text-red-600">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <h2 className="mt-3 text-base font-semibold text-gray-900">{title}</h2>
+          <p className="mt-1 text-sm text-gray-600">{message}</p>
+        </div>
+
+        <div className="px-6 pb-2 pt-4">
+          <div className="rounded-xl bg-gray-50 px-4 py-3 text-left">
+            <p className="text-sm text-gray-700">{details}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 px-6 pb-6 pt-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className="w-full rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+          >
+            {loading ? "Please wait..." : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminProjects() {
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
@@ -68,6 +120,9 @@ export default function AdminProjects() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null); // project or null
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [pendingDeleteProject, setPendingDeleteProject] = useState(null);
 
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("name");
@@ -245,16 +300,30 @@ export default function AdminProjects() {
     }
   };
 
-  const handleDelete = async (project) => {
-    if (!window.confirm(`Delete project "${project.name}"? This cannot be undone.`)) {
-      return;
-    }
+  const openDeleteConfirm = (project) => {
+    setPendingDeleteProject(project);
+    setDeleteConfirmOpen(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    if (deleteLoading) return;
+    setDeleteConfirmOpen(false);
+    setPendingDeleteProject(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!pendingDeleteProject) return;
+    setDeleteLoading(true);
     try {
-      await deleteProject(project.id);
-      setProjects((prev) => prev.filter((p) => p.id !== project.id));
+      await deleteProject(pendingDeleteProject.id);
+      setProjects((prev) => prev.filter((p) => p.id !== pendingDeleteProject.id));
       showSuccess("Project deleted");
+      setDeleteConfirmOpen(false);
+      setPendingDeleteProject(null);
     } catch (err) {
       showError(getApiMessage(err));
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -380,19 +449,22 @@ export default function AdminProjects() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right text-sm">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-3">
+                      {/* Edit */}
                       <button
                         onClick={() => openEdit(p)}
-                        className="rounded-lg px-3 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                        className="rounded-lg p-2 text-blue-600 hover:bg-blue-50"
+                        title="Edit project"
                       >
-                        Edit
+                        <SquarePen className="h-5 w-5" />
                       </button>
+                      {/* Delete */}
                       <button
-                        onClick={() => handleDelete(p)}
-                        className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                        onClick={() => openDeleteConfirm(p)}
+                        className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                        title="Delete project"
                       >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
+                        <Trash2 className="h-5 w-5" />
                       </button>
                     </div>
                   </td>
@@ -567,7 +639,16 @@ export default function AdminProjects() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title="Delete project?"
+        message="This action cannot be undone."
+        details={`Project: ${pendingDeleteProject?.name || "-"}`}
+        loading={deleteLoading}
+        onCancel={closeDeleteConfirm}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 }
-

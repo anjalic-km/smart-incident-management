@@ -5,7 +5,6 @@ import com.smartims.entity.Issue;
 import com.smartims.entity.IssueActivity;
 import com.smartims.entity.User;
 import com.smartims.repository.IssueActivityRepository;
-import com.smartims.repository.IssueRepository;
 import com.smartims.repository.UserRepository;
 import com.smartims.service.AuditLogService;
 import com.smartims.service.IssueActivityService;
@@ -21,7 +20,6 @@ public class IssueActivityServiceImpl implements IssueActivityService {
 
     private final IssueActivityRepository issueActivityRepository;
     private final UserRepository userRepository;
-    private final IssueRepository issueRepository;
     private final AuditLogService auditLogService;
 
     @Override
@@ -38,7 +36,7 @@ public class IssueActivityServiceImpl implements IssueActivityService {
         activity.setDescription(description);
         activity.setPerformedBy(user);
 
-        IssueActivity savedActivity = issueActivityRepository.save(activity);
+        issueActivityRepository.save(activity);
 
         auditLogService.log(
                 "ISSUE_ACTIVITY_LOGGED",

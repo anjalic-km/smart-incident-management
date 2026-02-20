@@ -2,7 +2,6 @@ package com.smartims.controller;
 
 import com.smartims.dto.ApiResponse;
 import com.smartims.dto.UserProfileResponse;
-import com.smartims.service.UserService;
 import com.smartims.util.ResponseUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

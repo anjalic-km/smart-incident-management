@@ -22,10 +22,13 @@ import UserDashboard from "../pages/user/UserDashboard";
 import PlaceholderPage from "../pages/common/PlaceholderPage";
 import AdminUserManagement from "../pages/admin/AdminUserManagement";
 import AdminProjects from "../pages/admin/AdminProjects";
+import AdminSlaConfiguration from "../pages/admin/AdminSlaConfiguration";
 import SuperAdminDashboard from "../pages/superadmin/SuperAdminDashboard";
 import SuperAdminAddCompanyAdmin from "../pages/superadmin/SuperAdminAddCompanyAdmin";
 import SuperAdminUsers from "../pages/superadmin/SuperAdminUsers";
 import SuperAdminLogs from "../pages/superadmin/SuperAdminLogs";
+import EditProfile from "../pages/profile/EditProfile";
+import ChangePassword from "../pages/profile/ChangePassword";
 
 export default function AppRoutes() {
   return (
@@ -106,6 +109,8 @@ export default function AppRoutes() {
           }
         />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/profile/edit" element={<EditProfile />} />
+        <Route path="/profile/change-password" element={<ChangePassword />} />
         <Route
           path="/force-change-password"
           element={
@@ -142,7 +147,7 @@ export default function AppRoutes() {
           path="/admin/sla-config"
           element={
             <ProtectedRoute allowedRoles={["SUPER_ADMIN", "ADMIN"]}>
-              <PlaceholderPage title="Admin · SLA Configuration" />
+              <AdminSlaConfiguration />
             </ProtectedRoute>
           }
         />
@@ -316,3 +321,5 @@ export default function AppRoutes() {
     </Routes>
   );
 }
+
+

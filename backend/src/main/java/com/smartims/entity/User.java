@@ -4,8 +4,6 @@ import com.smartims.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "users")
 @Data
@@ -40,6 +38,7 @@ public class User {
     private boolean enabled = false;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean verified = false;
 
     @Column(nullable = false)
@@ -47,6 +46,7 @@ public class User {
     private boolean locked = false;//if user is deleted then only it should be true(softDelete)
 
     @Column(name = "token_version", nullable = false)
+    @Builder.Default
     private Integer tokenVersion = 0;
 
     @Column(name = "must_change_password", nullable = false)

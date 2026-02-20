@@ -5,6 +5,7 @@ import com.smartims.service.OtpException;
 import com.smartims.util.ResponseUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -58,6 +59,42 @@ public class GlobalExceptionHandler {
 
         log.info("OtpException: {}", ex.getMessage());
 
+        return ResponseUtil.error(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiResponse<?>> handleBadRequestException(BadRequestException ex) {
+        log.info("BadRequestException: {}", ex.getMessage());
+        return ResponseUtil.error(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<?>> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        log.info("ResourceNotFoundException: {}", ex.getMessage());
+        return ResponseUtil.error(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage()
+        );
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<?>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation", ex);
+        return ResponseUtil.error(
+                HttpStatus.BAD_REQUEST,
+                "Invalid or duplicate data"
+        );
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<?>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        log.info("IllegalArgumentException: {}", ex.getMessage());
         return ResponseUtil.error(
                 HttpStatus.BAD_REQUEST,
                 ex.getMessage()

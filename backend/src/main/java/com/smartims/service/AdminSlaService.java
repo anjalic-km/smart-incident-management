@@ -12,13 +12,8 @@ public abstract class AdminSlaService {
             UpdateSlaPolicyRequest request
     );
 
-
-    private Integer toMinutes(long minutes) {
-        if (minutes > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException(
-                    "Resolution time is too large"
-            );
-        }
-        return (int) minutes;
-    }
+    public abstract void deletePolicy(
+            Long projectId,
+            String priorityLevel
+    );
 }

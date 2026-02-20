@@ -1,5 +1,7 @@
-import { Bell, Settings, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
+import NotificationsDropdown from "./NotificationsDropdown";
+import SettingsDropdown from "./SettingsDropdown";
 
 function getInitialsFromName(name) {
   const cleaned = String(name || "").trim();
@@ -55,17 +57,10 @@ const Header = () => {
       <div className="flex items-center gap-6">
 
         {/* Notifications */}
-        <button className="relative text-gray-600 hover:text-indigo-600">
-          <Bell className="w-5 h-5" />
-          <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-1.5 rounded-full">
-            2
-          </span>
-        </button>
+        <NotificationsDropdown />
 
         {/* Settings */}
-        <button className="text-gray-600 hover:text-indigo-600">
-          <Settings className="w-5 h-5" />
-        </button>
+        <SettingsDropdown />
 
         {/* Profile */}
         <div className="flex items-center gap-2">
@@ -87,7 +82,7 @@ const Header = () => {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="text-gray-600 hover:text-red-600"
+          className="text-red-600 hover:text-red-700"
           title="Logout"
         >
           <LogOut className="w-5 h-5" />

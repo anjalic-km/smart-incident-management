@@ -27,6 +27,7 @@ export default function SuperAdminUsers() {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
+  const [companyFilter, setCompanyFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("fullName");
   const [sortDir, setSortDir] = useState("asc");
 
@@ -55,9 +56,11 @@ export default function SuperAdminUsers() {
     const filtered = users.filter((u) => {
       const matchesRole =
         roleFilter === "ALL" ? true : String(u?.role) === roleFilter;
+      const matchesCompany =
+        companyFilter === "ALL" ? true : u?.company === companyFilter;
       const hay = `${u?.fullName || ""} ${u?.email || ""} ${u?.company || ""}`.toLowerCase();
       const matchesSearch = q ? hay.includes(q) : true;
-      return matchesRole && matchesSearch;
+      return matchesRole && matchesCompany && matchesSearch;
     });
 
     const dir = sortDir === "desc" ? -1 : 1;
@@ -68,7 +71,7 @@ export default function SuperAdminUsers() {
     });
 
     return sorted;
-  }, [users, search, roleFilter, sortBy, sortDir]);
+  }, [users, search, roleFilter, companyFilter, sortBy, sortDir]);
 
   const toggleSort = (key) => {
     setSortBy((prev) => {
@@ -97,6 +100,15 @@ export default function SuperAdminUsers() {
       </button>
     );
   };
+
+  const companies = useMemo(() => {
+    const set = new Set(
+      users
+        .map((u) => u.company)
+        .filter((c) => c && String(c).trim().length > 0)
+    );
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [users]);
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
@@ -128,6 +140,18 @@ export default function SuperAdminUsers() {
             {ROLE_FILTER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={companyFilter}
+            onChange={(e) => setCompanyFilter(e.target.value)}
+            className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 sm:w-56"
+          >
+            <option value="ALL">All companies</option>
+            {companies.map((c) => (
+              <option key={c} value={c}>
+                {c}
               </option>
             ))}
           </select>

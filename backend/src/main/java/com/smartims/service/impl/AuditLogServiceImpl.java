@@ -2,7 +2,6 @@ package com.smartims.service.impl;
 
 import com.smartims.entity.AuditLog;
 import com.smartims.repository.AuditLogRepository;
-import com.smartims.repository.UserRepository;
 import com.smartims.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +17,6 @@ import java.time.LocalDateTime;
 public class AuditLogServiceImpl implements AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
-    private final UserRepository userRepository;
     public static final String SYSTEM_EMAIL = "system@smartims.local";
     public static final String SYSTEM_ROLE  = "SYSTEM";
 
