@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 /* blur background */
 .otp-overlay {
   position: fixed;

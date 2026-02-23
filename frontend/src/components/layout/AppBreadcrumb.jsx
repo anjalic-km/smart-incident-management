@@ -37,6 +37,20 @@ export default function AppBreadcrumb() {
   const dashboardPath =
     (SIDEBAR_CONFIG?.[role] || []).find((item) => item.label === "Dashboard")?.path || "/";
 
+  const isUserProjectDetails = /^\/user\/project\/[^/]+$/.test(location.pathname);
+  const isUserIssueDetails = /^\/user\/issues\/[^/]+$/.test(location.pathname);
+  const projectIdFromPath = isUserProjectDetails
+    ? location.pathname.split("/").filter(Boolean).pop()
+    : null;
+  const issueIdFromPath = isUserIssueDetails
+    ? location.pathname.split("/").filter(Boolean).pop()
+    : null;
+  const projectNameFromState = location.state?.projectName;
+  const projectNameFromStorage = projectIdFromPath
+    ? sessionStorage.getItem(`project_name_${projectIdFromPath}`)
+    : null;
+  const projectLabel = projectNameFromState || projectNameFromStorage || `Project #${projectIdFromPath}`;
+
   return (
     <div className="mb-3 px-1">
       <div className="flex items-center gap-2 text-sm">
@@ -50,7 +64,33 @@ export default function AppBreadcrumb() {
         </button>
 
         <ChevronRight className="h-4 w-4 text-gray-400" />
-        <span className="font-semibold text-gray-900">{pageLabel}</span>
+        {isUserProjectDetails ? (
+          <>
+            <button
+              type="button"
+              onClick={() => navigate("/user/project")}
+              className="font-medium text-gray-600 hover:text-indigo-600"
+            >
+              Project Details
+            </button>
+            <ChevronRight className="h-4 w-4 text-gray-400" />
+            <span className="font-semibold text-gray-900">{projectLabel}</span>
+          </>
+        ) : isUserIssueDetails ? (
+          <>
+            <button
+              type="button"
+              onClick={() => navigate("/user/issues")}
+              className="font-medium text-gray-600 hover:text-indigo-600"
+            >
+              My Issues
+            </button>
+            <ChevronRight className="h-4 w-4 text-gray-400" />
+            <span className="font-semibold text-gray-900">{`ISS-${String(issueIdFromPath).padStart(3, "0")}`}</span>
+          </>
+        ) : (
+          <span className="font-semibold text-gray-900">{pageLabel}</span>
+        )}
       </div>
     </div>
   );

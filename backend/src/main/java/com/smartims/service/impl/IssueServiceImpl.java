@@ -33,6 +33,7 @@ public class IssueServiceImpl implements IssueService {
     private final IssueRepository issueRepository;
     private final SlaBreachRepository slaBreachRepository;
     private final ProjectRepository projectRepository;
+    private final SlaPolicyRepository slaPolicyRepository;
     private final UserRepository userRepository;
     private final NotificationInboxService notificationInboxService;
     private final AuditLogService auditLogService;
@@ -44,7 +45,7 @@ public class IssueServiceImpl implements IssueService {
     }
 
     @Override
-    public void createIssue(CreateIssueRequest request, String createdBy) {
+    public IssueResponse createIssue(CreateIssueRequest request, String createdBy) {
 
         User currentUser = userRepository.findByEmail(createdBy)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -58,21 +59,22 @@ public class IssueServiceImpl implements IssueService {
             throw new RuntimeException("You are not allowed to create issue for this project");
         }
 
-        String severity;
+        Severity severity;
         String priorityLevel;
 
         if (project.getManager().equals(currentUser)) {
-            severity = String.valueOf(request.getSeverity());
-            priorityLevel = request.getPriorityLevel();
+            severity = request.getSeverity() != null ? request.getSeverity() : Severity.MEDIUM;
+            priorityLevel = request.getPriorityLevel() != null ? request.getPriorityLevel() : "-";
         } else {
-            severity = "MEDIUM";
-            priorityLevel = "P3";
+            // Keep DB-compatible severity value; frontend/API will show "-" while priority is unassigned.
+            severity = Severity.MEDIUM;
+            priorityLevel = "-";
         }
 
         Issue issue = Issue.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .severity(Severity.valueOf(severity))
+                .severity(severity)
                 .priorityLevel(priorityLevel)
                 .status(IssueStatus.OPEN)
                 .createdBy(createdBy)
@@ -81,8 +83,9 @@ public class IssueServiceImpl implements IssueService {
                 .slaBreached(false)
                 .build();
 
-        issue.setSlaStartTime(LocalDateTime.now());
-        issue.setSlaDueTime(LocalDateTime.now().plusMinutes(60));
+        // SLA timer will be initialized when engineer starts work (OPEN -> IN_PROGRESS).
+        issue.setSlaStartTime(null);
+        issue.setSlaDueTime(null);
 
         Issue savedIssue = issueRepository.save(issue);
 
@@ -104,6 +107,8 @@ public class IssueServiceImpl implements IssueService {
                 savedIssue.getId(),
                 "Issue created for project " + project.getName()
         );
+
+        return toIssueResponse(savedIssue);
     }
 
     @Override
@@ -146,6 +151,9 @@ public class IssueServiceImpl implements IssueService {
             case "ROLE_ENGINEER" -> {
                 if ((oldStatus == IssueStatus.OPEN && newStatus == IssueStatus.IN_PROGRESS)
                         || (oldStatus == IssueStatus.IN_PROGRESS && newStatus == IssueStatus.RESOLVED)) {
+                    if (oldStatus == IssueStatus.OPEN && newStatus == IssueStatus.IN_PROGRESS) {
+                        initializeSlaWindowIfNeeded(issue);
+                    }
                     issue.setStatus(newStatus);
                 } else {
                     throw new UnauthorizedException("Invalid status transition for ENGINEER");
@@ -193,7 +201,7 @@ public class IssueServiceImpl implements IssueService {
         // Check access permissions
         validateIssueAccess(issue);
         
-        return IssueMapper.toResponse(issue);
+        return toIssueResponse(issue);
     }
 
     @Override
@@ -205,7 +213,7 @@ public class IssueServiceImpl implements IssueService {
         if (email == null) {
             return issueRepository.findAll()
                     .stream()
-                    .map(IssueMapper::toResponse)
+                    .map(this::toIssueResponse)
                     .toList();
         }
 
@@ -234,13 +242,19 @@ public class IssueServiceImpl implements IssueService {
                     .flatMap(project -> issueRepository.findByProject(project).stream())
                     .toList();
         }
-        // ENGINEER and USER can see only issues assigned to them
-        else {
+        // ENGINEER can see only issues assigned to them
+        else if (currentUser.getRole().name().equals("ENGINEER")) {
             issues = issueRepository.findByAssignedEngineer(currentUser);
+        }
+        // USER can see issues created by them
+        else if (currentUser.getRole().name().equals("USER")) {
+            issues = issueRepository.findByCreatedBy(currentUser.getEmail());
+        } else {
+            issues = List.of();
         }
 
         return issues.stream()
-                .map(IssueMapper::toResponse)
+                .map(this::toIssueResponse)
                 .toList();
     }
 
@@ -311,14 +325,14 @@ public class IssueServiceImpl implements IssueService {
                 "Assigned to engineer " + engineer.getEmail()
         );
 
-        return IssueMapper.toResponse(saved);
+        return toIssueResponse(saved);
     }
 
     @Override
     public List<IssueResponse> getIssuesByEngineer(Long engineerId) {
         return issueRepository.findByAssignedEngineerId(engineerId)
                 .stream()
-                .map(IssueMapper::toResponse)
+                .map(this::toIssueResponse)
                 .toList();
     }
 
@@ -415,7 +429,12 @@ public class IssueServiceImpl implements IssueService {
         LocalDateTime due = issue.getSlaDueTime();
 
         if (start == null || due == null) {
-            throw new RuntimeException("SLA not initialized for this issue");
+            return SlaStatusResponse.builder()
+                    .slaStartTime(null)
+                    .slaDueTime(null)
+                    .remainingMinutes(0)
+                    .status("NOT_STARTED")
+                    .build();
         }
 
         long totalMinutes = Duration.between(start, due).toMinutes();
@@ -439,6 +458,34 @@ public class IssueServiceImpl implements IssueService {
                 .remainingMinutes(remainingMinutes)
                 .status(status)
                 .build();
+    }
+
+    private void initializeSlaWindowIfNeeded(Issue issue) {
+        if (issue.getSlaStartTime() != null && issue.getSlaDueTime() != null) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        long resolutionMinutes = 60L;
+        String priority = issue.getPriorityLevel();
+        if (priority != null && !priority.isBlank() && !"-".equals(priority)) {
+            resolutionMinutes = slaPolicyRepository
+                    .findByProjectIdAndPriorityLevel(issue.getProject().getId(), priority)
+                    .map(policy -> Long.valueOf(policy.getResolutionTimeMinutes()))
+                    .orElse(60L);
+        }
+        issue.setSlaStartTime(now);
+        issue.setSlaDueTime(now.plusMinutes(Math.max(1L, resolutionMinutes)));
+    }
+
+    private IssueResponse toIssueResponse(Issue issue) {
+        IssueResponse response = IssueMapper.toResponse(issue);
+        String createdByEmail = issue.getCreatedBy();
+        String createdByName = userRepository.findByEmail(createdByEmail)
+                .map(User::getFullName)
+                .orElse(createdByEmail);
+        response.setCreatedBy(createdByEmail);
+        response.setCreatedByName(createdByName);
+        return response;
     }
 
     @Override
@@ -467,11 +514,11 @@ public class IssueServiceImpl implements IssueService {
         String email = auth != null ? auth.getName() : null;
 
         if (email == null) {
-            throw new RuntimeException("User not authenticated");
+            throw new UnauthorizedException("User not authenticated");
         }
 
         User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
 
         // SUPER_ADMIN can access any issue
         if (currentUser.getRole().name().equals("SUPER_ADMIN")) {
@@ -485,7 +532,7 @@ public class IssueServiceImpl implements IssueService {
                     issue.getProject().getManager().getCompany() : null;
 
             if (userCompany == null || !userCompany.equals(issueProjectManagerCompany)) {
-                throw new RuntimeException("Access denied: Issue belongs to a different company");
+                throw new UnauthorizedException("Access denied: Issue belongs to a different company");
             }
             return;
         }
@@ -493,15 +540,28 @@ public class IssueServiceImpl implements IssueService {
         // MANAGER can access issues from their projects only
         if (currentUser.getRole().name().equals("MANAGER")) {
             if (!issue.getProject().getManager().getId().equals(currentUser.getId())) {
-                throw new RuntimeException("Access denied: Issue is not in your project");
+                throw new UnauthorizedException("Access denied: Issue is not in your project");
             }
             return;
         }
 
-        // ENGINEER and USER can access only issues assigned to them
-        if (!currentUser.getId().equals(issue.getAssignedEngineer() != null ? 
-                issue.getAssignedEngineer().getId() : null)) {
-            throw new RuntimeException("Access denied: This issue is not assigned to you");
+        // ENGINEER can access issues assigned to them
+        if (currentUser.getRole().name().equals("ENGINEER")) {
+            if (!currentUser.getId().equals(issue.getAssignedEngineer() != null ?
+                    issue.getAssignedEngineer().getId() : null)) {
+                throw new UnauthorizedException("Access denied: This issue is not assigned to you");
+            }
+            return;
         }
+
+        // USER can access issues created by them
+        if (currentUser.getRole().name().equals("USER")) {
+            if (!email.equalsIgnoreCase(String.valueOf(issue.getCreatedBy()))) {
+                throw new UnauthorizedException("Access denied: This issue was not created by you");
+            }
+            return;
+        }
+
+        throw new UnauthorizedException("Access denied");
     }
 }

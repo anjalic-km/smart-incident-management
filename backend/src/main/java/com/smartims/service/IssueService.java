@@ -13,7 +13,7 @@ public interface IssueService {
 
     long countByStatus(IssueStatus status);
 
-    void createIssue(CreateIssueRequest request, String createdBy);
+    IssueResponse createIssue(CreateIssueRequest request, String createdBy);
 
     List<Issue> getIssuesByProject(Long projectId);
 

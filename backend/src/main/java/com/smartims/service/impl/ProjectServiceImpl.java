@@ -1,6 +1,7 @@
 package com.smartims.service.impl;
 
 import com.smartims.dto.CreateProjectRequest;
+import com.smartims.dto.ProjectMemberResponse;
 import com.smartims.dto.ProjectResponse;
 import com.smartims.dto.UpdateProjectRequest;
 import com.smartims.entity.Project;
@@ -16,13 +17,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
+    private static final DateTimeFormatter CREATED_AT_DISPLAY_FORMAT =
+            DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a", Locale.ENGLISH);
 
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
@@ -274,20 +279,37 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private ProjectResponse mapToResponse(Project project) {
+        LocalDateTime createdAt = project.getCreatedAt() != null ? project.getCreatedAt() : LocalDateTime.now();
         return ProjectResponse.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .description(project.getDescription())
                 .managerName(
                         project.getManager() != null
-                                ? project.getManager().getEmail()
+                                ? project.getManager().getFullName()
                                 : null
                 )
                 .memberNames(
                         project.getMembers()
                                 .stream()
-                                .map(User::getEmail)
+                                .map(User::getFullName)
                                 .collect(Collectors.toList())
+                )
+                .memberDetails(
+                        project.getMembers()
+                                .stream()
+                                .map(member -> ProjectMemberResponse.builder()
+                                        .id(member.getId())
+                                        .fullName(member.getFullName())
+                                        .role(member.getRole() != null ? member.getRole().name() : null)
+                                        .build())
+                                .collect(Collectors.toList())
+                )
+                .createdAt(createdAt)
+                .createdAtDisplay(createdAt.format(CREATED_AT_DISPLAY_FORMAT))
+                .debugCreatedAtRaw(String.valueOf(project.getCreatedAt()))
+                .debugCreatedAtJavaType(
+                        project.getCreatedAt() == null ? "null" : project.getCreatedAt().getClass().getName()
                 )
                 .build();
     }

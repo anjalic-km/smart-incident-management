@@ -83,6 +83,15 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<?>> handleUnauthorizedException(UnauthorizedException ex) {
+        log.info("UnauthorizedException: {}", ex.getMessage());
+        return ResponseUtil.error(
+                HttpStatus.FORBIDDEN,
+                ex.getMessage()
+        );
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<?>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
         log.warn("Data integrity violation", ex);

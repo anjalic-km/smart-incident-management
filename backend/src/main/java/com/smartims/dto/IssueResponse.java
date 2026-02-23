@@ -16,6 +16,8 @@ public class IssueResponse {
     private String description;
     private String severity;
     private String status;
+    private String createdBy;
+    private String createdByName;
 
     private Long projectId;
     private String projectName;

@@ -1,5 +1,6 @@
 package com.smartims.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -15,6 +16,17 @@ public class ProjectResponse {
     private String description;
     private String managerName;
     private List<String> memberNames;
+    private List<ProjectMemberResponse> memberDetails;
 
+    @JsonProperty("created_at")
     private LocalDateTime createdAt;
+
+    @JsonProperty("created_at_display")
+    private String createdAtDisplay;
+
+    @JsonProperty("debug_created_at_raw")
+    private String debugCreatedAtRaw;
+
+    @JsonProperty("debug_created_at_java_type")
+    private String debugCreatedAtJavaType;
 }

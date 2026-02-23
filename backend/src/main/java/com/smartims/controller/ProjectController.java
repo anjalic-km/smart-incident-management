@@ -6,6 +6,7 @@ import com.smartims.dto.ProjectResponse;
 import com.smartims.dto.UpdateProjectRequest;
 import com.smartims.service.ProjectService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
+@Slf4j
 public class ProjectController {
 
     private final ProjectService projectService;
@@ -37,11 +39,21 @@ public class ProjectController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ProjectResponse>>> getAllProjects() {
+        List<ProjectResponse> projects = projectService.getAllProjects();
+        projects.stream().limit(5).forEach(project -> log.info(
+                "Projects debug id={} name={} created_at={} created_at_display={} debug_created_at_raw={} debug_created_at_java_type={}",
+                project.getId(),
+                project.getName(),
+                project.getCreatedAt(),
+                project.getCreatedAtDisplay(),
+                project.getDebugCreatedAtRaw(),
+                project.getDebugCreatedAtJavaType()
+        ));
 
         return ResponseEntity.ok(
                 ApiResponse.success(
                         "Projects fetched successfully",
-                        projectService.getAllProjects()
+                        projects
                 )
         );
     }

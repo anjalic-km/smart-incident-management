@@ -10,7 +10,7 @@ public class IssueMapper {
                 .id(issue.getId())
                 .title(issue.getTitle())
                 .description(issue.getDescription())
-                .severity(issue.getSeverity().name())
+                .severity("-".equals(String.valueOf(issue.getPriorityLevel())) ? "-" : issue.getSeverity().name())
                 .status(issue.getStatus().name())
                 .projectId(issue.getProject().getId())
                 .projectName(issue.getProject().getName())

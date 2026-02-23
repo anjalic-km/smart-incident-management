@@ -20,17 +20,17 @@ public class IssueController {
 
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','USER')")
     @PostMapping
-    public ApiResponse<Void> createIssue(
+    public ApiResponse<IssueResponse> createIssue(
             @Valid @RequestBody CreateIssueRequest request,
             Authentication authentication
     ) {
         String email = authentication.getName();
 
-        issueService.createIssue(request, email);
+        IssueResponse createdIssue = issueService.createIssue(request, email);
 
         return ApiResponse.success(
                 "Issue created successfully",
-                null
+                createdIssue
         );
     }
 

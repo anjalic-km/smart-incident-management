@@ -223,18 +223,24 @@ export default function AdminSlaConfiguration() {
       return;
     }
 
-    const firstProjectId = String(projects[0]?.id || "");
-    const used = usedPrioritiesByProject.get(firstProjectId) || new Set();
-    const availablePriorities = PRIORITY_OPTIONS.filter((p) => !used.has(p));
+    const firstAvailableProject = projects.find((project) => {
+      const pid = String(project?.id || "");
+      const used = usedPrioritiesByProject.get(pid) || new Set();
+      return PRIORITY_OPTIONS.some((priority) => !used.has(priority));
+    });
 
-    if (availablePriorities.length === 0) {
-      showError("All SLA categories are already configured for this project");
+    if (!firstAvailableProject) {
+      showError("All SLA categories are already configured for all projects");
       return;
     }
 
+    const selectedProjectId = String(firstAvailableProject.id);
+    const used = usedPrioritiesByProject.get(selectedProjectId) || new Set();
+    const availablePriorities = PRIORITY_OPTIONS.filter((p) => !used.has(p));
+
     setEditing(null);
     setForm({
-      projectId: firstProjectId,
+      projectId: selectedProjectId,
       priorityLevel: availablePriorities[0],
       resolutionTimeMinutes: "",
       description: ""

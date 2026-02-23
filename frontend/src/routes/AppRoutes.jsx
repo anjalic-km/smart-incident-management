@@ -31,6 +31,11 @@ import SuperAdminUsers from "../pages/superadmin/SuperAdminUsers";
 import SuperAdminLogs from "../pages/superadmin/SuperAdminLogs";
 import EditProfile from "../pages/profile/EditProfile";
 import ChangePassword from "../pages/profile/ChangePassword";
+import UserProjectDetails from "../pages/user/UserProjectDetails";
+import UserCreateIssue from "../pages/user/UserCreateIssue";
+import UserIssues from "../pages/user/UserIssues";
+import UserReports from "../pages/user/UserReports";
+import UserIssueDetails from "../pages/user/UserIssueDetails";
 
 export default function AppRoutes() {
   return (
@@ -288,7 +293,15 @@ export default function AppRoutes() {
           path="/user/project"
           element={
             <ProtectedRoute allowedRoles={["USER"]}>
-              <PlaceholderPage title="User · Project Details" />
+              <UserProjectDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/project/:projectId"
+          element={
+            <ProtectedRoute allowedRoles={["USER"]}>
+              <UserProjectDetails />
             </ProtectedRoute>
           }
         />
@@ -296,7 +309,7 @@ export default function AppRoutes() {
           path="/user/create-issue"
           element={
             <ProtectedRoute allowedRoles={["USER"]}>
-              <PlaceholderPage title="User · Create Issue" />
+              <UserCreateIssue />
             </ProtectedRoute>
           }
         />
@@ -304,7 +317,15 @@ export default function AppRoutes() {
           path="/user/issues"
           element={
             <ProtectedRoute allowedRoles={["USER"]}>
-              <PlaceholderPage title="User · My Issues" />
+              <UserIssues />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/issues/:issueId"
+          element={
+            <ProtectedRoute allowedRoles={["USER"]}>
+              <UserIssueDetails />
             </ProtectedRoute>
           }
         />
@@ -312,7 +333,7 @@ export default function AppRoutes() {
           path="/user/reports"
           element={
             <ProtectedRoute allowedRoles={["USER"]}>
-              <PlaceholderPage title="User · Reports" />
+              <UserReports />
             </ProtectedRoute>
           }
         />
@@ -323,6 +344,7 @@ export default function AppRoutes() {
     </Routes>
   );
 }
+
 
 
 

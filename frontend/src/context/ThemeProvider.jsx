@@ -62,7 +62,7 @@ export function ThemeProvider({ children }) {
     const shouldUseDark = isAppShellRoute && !isAuthLightRoute && theme === "dark";
     root.classList.toggle("dark", shouldUseDark);
     root.setAttribute("data-theme", shouldUseDark ? "dark" : "light");
-  }, [theme, isAuthLightRoute, storageKey]);
+  }, [theme, isAuthLightRoute, isAppShellRoute, storageKey]);
 
   const value = useMemo(
     () => ({
