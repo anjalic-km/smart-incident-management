@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ThemeContext } from "./ThemeContext";
 import { useAuth } from "./useAuth";
@@ -25,9 +25,8 @@ function getThemeStorageKey(user) {
 export function ThemeProvider({ children }) {
   const { user } = useAuth();
   const location = useLocation();
-  const storageKey = useMemo(() => getThemeStorageKey(user), [user?.userId, user?.email, user?.sub]);
-  const [theme, setTheme] = useState(() => getSavedTheme(LEGACY_THEME_KEY) || getSystemTheme());
-  const [loadedThemeKey, setLoadedThemeKey] = useState(null);
+  const storageKey = getThemeStorageKey(user);
+  const [themeOverrides, setThemeOverrides] = useState({});
 
   const isAuthLightRoute =
     location.pathname === "/login" ||
@@ -41,45 +40,34 @@ export function ThemeProvider({ children }) {
     location.pathname
   );
 
-  useEffect(() => {
-    const savedForUser = getSavedTheme(storageKey);
-    const legacyTheme = getSavedTheme(LEGACY_THEME_KEY);
-    const nextTheme = savedForUser || legacyTheme || getSystemTheme();
+  const theme =
+    themeOverrides[storageKey] ||
+    getSavedTheme(storageKey) ||
+    getSavedTheme(LEGACY_THEME_KEY) ||
+    getSystemTheme();
 
-    setTheme(nextTheme);
-
-    if (savedForUser) {
-      setLoadedThemeKey(storageKey);
-      return;
-    }
-    if (legacyTheme) {
-      // Migrate legacy theme to user-scoped key on first load.
-      setLoadedThemeKey(storageKey);
-      return;
-    }
-    setLoadedThemeKey(storageKey);
-  }, [storageKey]);
+  const setTheme = (nextTheme) => {
+    setThemeOverrides((prev) => {
+      const resolved = typeof nextTheme === "function" ? nextTheme(theme) : nextTheme;
+      return { ...prev, [storageKey]: resolved };
+    });
+  };
 
   useEffect(() => {
-    if (loadedThemeKey !== storageKey) return;
-
     localStorage.setItem(storageKey, theme);
     localStorage.setItem(LEGACY_THEME_KEY, theme);
     const root = document.documentElement;
     const shouldUseDark = isAppShellRoute && !isAuthLightRoute && theme === "dark";
     root.classList.toggle("dark", shouldUseDark);
     root.setAttribute("data-theme", shouldUseDark ? "dark" : "light");
-  }, [theme, isAuthLightRoute, isAppShellRoute, storageKey, loadedThemeKey]);
+  }, [theme, isAuthLightRoute, isAppShellRoute, storageKey]);
 
-  const value = useMemo(
-    () => ({
-      theme,
-      isDark: theme === "dark",
-      setTheme,
-      toggleTheme: () => setTheme((prev) => (prev === "dark" ? "light" : "dark"))
-    }),
-    [theme]
-  );
+  const value = {
+    theme,
+    isDark: theme === "dark",
+    setTheme,
+    toggleTheme: () => setTheme((prev) => (prev === "dark" ? "light" : "dark"))
+  };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

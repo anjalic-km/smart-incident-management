@@ -13,7 +13,7 @@ const REPORT_TABS = [
 ];
 const ISSUE_STATUS_ORDER = ["CREATED", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
 const PRIORITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
-const SLA_STATUS_ORDER = ["NOT_STARTED", "ON_TRACK", "AT_RISK", "BREACHED"];
+const SLA_STATUS_ORDER = ["NOT_STARTED", "ON_TRACK", "RESOLVED_IN_SLA", "AT_RISK", "BREACHED"];
 
 function getApiMessage(err) {
   return (
@@ -76,6 +76,57 @@ function StatCard({ label, value, hint, onClick, active }) {
       <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
       <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
       <p className="mt-1 text-xs text-gray-500">{hint}</p>
+    </button>
+  );
+}
+
+function SlaStatusCard({ label, value, hint, onClick, active, tone }) {
+  const palette = {
+    indigo: {
+      card: "border-indigo-200 bg-indigo-50 dark:border-indigo-500/35 dark:bg-indigo-500/12",
+      text: "text-indigo-900 dark:text-indigo-100",
+      hint: "text-indigo-700/80 dark:text-indigo-300/90",
+      ring: "ring-indigo-200"
+    },
+    emerald: {
+      card: "border-emerald-200 bg-emerald-50 dark:border-emerald-500/35 dark:bg-emerald-500/12",
+      text: "text-emerald-900 dark:text-emerald-100",
+      hint: "text-emerald-700/80 dark:text-emerald-300/90",
+      ring: "ring-emerald-200"
+    },
+    cyan: {
+      card: "border-cyan-200 bg-cyan-50 dark:border-cyan-500/35 dark:bg-cyan-500/12",
+      text: "text-cyan-900 dark:text-cyan-100",
+      hint: "text-cyan-700/80 dark:text-cyan-300/90",
+      ring: "ring-cyan-200"
+    },
+    amber: {
+      card: "border-amber-200 bg-amber-50 dark:border-amber-500/35 dark:bg-amber-500/12",
+      text: "text-amber-900 dark:text-amber-100",
+      hint: "text-amber-700/80 dark:text-amber-300/90",
+      ring: "ring-amber-200"
+    },
+    red: {
+      card: "border-red-200 bg-red-50 dark:border-red-500/35 dark:bg-red-500/12",
+      text: "text-red-900 dark:text-red-100",
+      hint: "text-red-700/80 dark:text-red-300/90",
+      ring: "ring-red-200"
+    }
+  };
+  const styles = palette[tone] || palette.indigo;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full rounded-xl border p-4 text-left transition ${styles.card} ${
+        active ? `ring-2 ${styles.ring}` : ""
+      } ${onClick ? "hover:opacity-90" : ""}`}
+      disabled={!onClick}
+    >
+      <p className={`text-xs font-semibold uppercase tracking-wide ${styles.hint}`}>{label}</p>
+      <p className={`mt-2 text-2xl font-bold ${styles.text}`}>{value}</p>
+      <p className={`mt-1 text-xs ${styles.hint}`}>{hint}</p>
     </button>
   );
 }
@@ -202,17 +253,21 @@ function PriorityPieChart({ items, selectedKey, onSelect }) {
     return `M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
   };
 
-  let currentAngle = -90;
   const slices = ordered
     .filter((item) => item.value > 0)
-    .map((item) => {
-      const sweep = total === 0 ? 0 : (item.value / total) * 360;
-      const start = currentAngle;
-      const end = currentAngle + sweep;
-      const mid = start + sweep / 2;
-      currentAngle = end;
-      return { ...item, start, end, mid };
-    });
+    .reduce(
+      (acc, item) => {
+        const sweep = total === 0 ? 0 : (item.value / total) * 360;
+        const start = acc.currentAngle;
+        const end = start + sweep;
+        const mid = start + sweep / 2;
+        return {
+          currentAngle: end,
+          items: [...acc.items, { ...item, start, end, mid }]
+        };
+      },
+      { currentAngle: -90, items: [] }
+    ).items;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4">
@@ -497,7 +552,7 @@ export default function AdminReports() {
   const slaKnownIssues = useMemo(
     () =>
       issuesWithSla.filter((issue) =>
-        ["NOT_STARTED", "ON_TRACK", "AT_RISK", "BREACHED"].includes(
+        ["NOT_STARTED", "ON_TRACK", "RESOLVED_IN_SLA", "AT_RISK", "BREACHED"].includes(
           String(issue?.slaStatus || "").toUpperCase()
         )
       ),
@@ -506,17 +561,19 @@ export default function AdminReports() {
 
   const filteredSlaIssues = useMemo(() => {
     return slaKnownIssues.filter((issue) => {
-      return selectedSlaStatus ? issue.slaStatus === selectedSlaStatus : true;
+      const currentStatus = String(issue?.slaStatus || "").toUpperCase();
+      return selectedSlaStatus ? currentStatus === selectedSlaStatus : true;
     });
   }, [slaKnownIssues, selectedSlaStatus]);
 
   const slaSummary = useMemo(() => {
     const notStarted = filteredSlaIssues.filter((i) => i.slaStatus === "NOT_STARTED").length;
     const onTrack = filteredSlaIssues.filter((i) => i.slaStatus === "ON_TRACK").length;
+    const resolvedWithinSla = filteredSlaIssues.filter((i) => i.slaStatus === "RESOLVED_IN_SLA").length;
     const atRisk = filteredSlaIssues.filter((i) => i.slaStatus === "AT_RISK").length;
     const breached = filteredSlaIssues.filter((i) => i.slaStatus === "BREACHED").length;
     const total = filteredSlaIssues.length;
-    const compliance = total === 0 ? 0 : Number(((onTrack / total) * 100).toFixed(2));
+    const compliance = total === 0 ? 0 : Number((((onTrack + resolvedWithinSla) / total) * 100).toFixed(2));
 
     const allocatedSamples = filteredSlaIssues
       .map((i) => {
@@ -535,7 +592,7 @@ export default function AdminReports() {
             allocatedSamples.reduce((sum, value) => sum + value, 0) / allocatedSamples.length
           );
 
-    return { notStarted, onTrack, atRisk, breached, total, compliance, avgAllocatedMin };
+    return { notStarted, onTrack, resolvedWithinSla, atRisk, breached, total, compliance, avgAllocatedMin };
   }, [filteredSlaIssues]);
 
   const slaStatusDistribution = useMemo(() => {
@@ -819,39 +876,49 @@ export default function AdminReports() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <StatCard label="SLA Tracked" value={slaSummary.total} hint="Issues with SLA status" />
-            <StatCard
+            <SlaStatusCard
               label="Not Started"
               value={slaSummary.notStarted}
               hint="SLA timer not started"
               onClick={() => setSelectedSlaStatus((prev) => (prev === "NOT_STARTED" ? "" : "NOT_STARTED"))}
               active={selectedSlaStatus === "NOT_STARTED"}
+              tone="indigo"
             />
-            <StatCard
+            <SlaStatusCard
               label="On Track"
               value={slaSummary.onTrack}
               hint="Within SLA window"
               onClick={() => setSelectedSlaStatus((prev) => (prev === "ON_TRACK" ? "" : "ON_TRACK"))}
               active={selectedSlaStatus === "ON_TRACK"}
+              tone="emerald"
             />
-            <StatCard
+            <SlaStatusCard
+              label="Solved Within SLA"
+              value={slaSummary.resolvedWithinSla}
+              hint="Resolved before SLA due"
+              onClick={() =>
+                setSelectedSlaStatus((prev) =>
+                  prev === "RESOLVED_IN_SLA" ? "" : "RESOLVED_IN_SLA"
+                )
+              }
+              active={selectedSlaStatus === "RESOLVED_IN_SLA"}
+              tone="cyan"
+            />
+            <SlaStatusCard
               label="At Risk"
               value={slaSummary.atRisk}
               hint="Near due time"
               onClick={() => setSelectedSlaStatus((prev) => (prev === "AT_RISK" ? "" : "AT_RISK"))}
               active={selectedSlaStatus === "AT_RISK"}
+              tone="amber"
             />
-            <StatCard
+            <SlaStatusCard
               label="Breached"
               value={slaSummary.breached}
               hint="SLA crossed due"
               onClick={() => setSelectedSlaStatus((prev) => (prev === "BREACHED" ? "" : "BREACHED"))}
               active={selectedSlaStatus === "BREACHED"}
-            />
-            <StatCard
-              label="Avg SLA Time"
-              value={`${slaSummary.avgAllocatedMin} min`}
-              hint="Average allocated SLA window"
+              tone="red"
             />
           </div>
 

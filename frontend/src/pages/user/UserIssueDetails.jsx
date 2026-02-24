@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   AlertTriangle,
@@ -143,7 +143,7 @@ export default function UserIssueDetails() {
   const [statusSaving, setStatusSaving] = useState(false);
   const role = String(user?.role || "").toUpperCase();
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -166,11 +166,11 @@ export default function UserIssueDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [issueId]);
 
   useEffect(() => {
     fetchData();
-  }, [issueId]);
+  }, [fetchData]);
 
   const slaRemainingText = useMemo(() => formatMinutesAsHours(sla?.remainingMinutes), [sla]);
   const slaNotStarted = String(sla?.status || "").toUpperCase() === "NOT_STARTED";

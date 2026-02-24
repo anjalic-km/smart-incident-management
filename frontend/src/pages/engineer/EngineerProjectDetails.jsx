@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CalendarDays, Eye, FolderKanban, ShieldCheck, UserRound, UsersRound, Wrench } from "lucide-react";
 import { getAllProjects } from "../../api/projectApi";
@@ -89,7 +89,7 @@ function splitMembersByRole(memberDetails, memberNames, userLookup) {
   };
 }
 
-function InfoCard({ icon: Icon, title, value, tone = "indigo" }) {
+function InfoCard({ icon, title, value, tone = "indigo" }) {
   const tones = {
     indigo: "bg-indigo-100 text-indigo-700",
     emerald: "bg-emerald-100 text-emerald-700",
@@ -103,7 +103,7 @@ function InfoCard({ icon: Icon, title, value, tone = "indigo" }) {
           <p className="mt-1 text-base font-semibold text-gray-900">{value}</p>
         </div>
         <div className={`rounded-lg p-2 ${tones[tone] || tones.indigo}`}>
-          <Icon className="h-4 w-4" />
+          {icon ? createElement(icon, { className: "h-4 w-4" }) : null}
         </div>
       </div>
     </div>

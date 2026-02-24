@@ -413,7 +413,7 @@ export default function SuperAdminAddCompanyAdmin() {
   };
 
   const toggleEnabled = async (admin) => {
-    const next = !Boolean(admin?.enabled);
+    const next = admin?.enabled !== true;
     try {
       await updateUserStatus(admin.id, next);
       setAdmins((prev) => prev.map((a) => (a.id === admin.id ? { ...a, enabled: next } : a)));
@@ -424,7 +424,7 @@ export default function SuperAdminAddCompanyAdmin() {
   };
 
   const toggleLocked = async (admin) => {
-    const next = !Boolean(admin?.locked);
+    const next = admin?.locked !== true;
     try {
       await updateUserLockStatus(admin.id, next);
       setAdmins((prev) => prev.map((a) => (a.id === admin.id ? { ...a, locked: next } : a)));

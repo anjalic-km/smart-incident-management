@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Send, Upload } from "lucide-react";
 import { createIssue, uploadIssueAttachment } from "../../api/issuesApi";
 import { getAllProjects } from "../../api/projectApi";
@@ -40,25 +40,27 @@ export default function UserCreateIssue() {
     description: ""
   });
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setLoadingProjects(true);
     try {
       const res = await getAllProjects();
       const list = unwrapArrayData(res);
       setProjects(list);
-      if (!form.projectId && list.length > 0) {
-        setForm((prev) => ({ ...prev, projectId: String(list[0].id) }));
-      }
+      setForm((prev) =>
+        !prev.projectId && list.length > 0
+          ? { ...prev, projectId: String(list[0].id) }
+          : prev
+      );
     } catch (err) {
       showError(getApiMessage(err));
     } finally {
       setLoadingProjects(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]);
 
   const selectedProjectName = useMemo(
     () => projects.find((p) => String(p.id) === String(form.projectId))?.name || "-",

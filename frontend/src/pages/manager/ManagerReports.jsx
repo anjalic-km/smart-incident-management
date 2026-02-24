@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Check, CheckCircle2, Clock3, FolderKanban, RefreshCcw } from "lucide-react";
 import { getAllIssues, getIssueSlaStatus } from "../../api/issuesApi";
 import { getAllProjects } from "../../api/projectApi";
@@ -53,7 +53,7 @@ function issueCode(id) {
   return `ISS-${String(num).padStart(3, "0")}`;
 }
 
-function StatCard({ icon: Icon, label, value, tone }) {
+function StatCard({ icon, label, value, tone }) {
   const toneMap = {
     indigo: "bg-indigo-100 text-indigo-700",
     amber: "bg-amber-100 text-amber-700",
@@ -68,7 +68,7 @@ function StatCard({ icon: Icon, label, value, tone }) {
           <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
         </div>
         <div className={`rounded-xl p-2 ${toneMap[tone] || toneMap.indigo}`}>
-          <Icon className="h-5 w-5" />
+          {icon ? createElement(icon, { className: "h-5 w-5" }) : null}
         </div>
       </div>
     </div>
@@ -303,7 +303,7 @@ export default function ManagerReports() {
                     <td className="px-4 py-3">
                       <p className="text-sm font-semibold text-gray-900">{issue.title || "-"}</p>
                       <p className="mt-0.5 text-xs text-indigo-600">
-                        {Number.isNaN(Number(issue?.id)) ? "-" : `ISS-${String(Number(issue.id)).padStart(3, "0")}`}
+                        {issueCode(issue?.id)}
                       </p>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{issue.projectName || "-"}</td>

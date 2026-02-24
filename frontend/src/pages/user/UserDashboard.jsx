@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, ClipboardList, FolderKanban } from "lucide-react";
 import { getAllIssues } from "../../api/issuesApi";
 import { getAllProjects } from "../../api/projectApi";
@@ -41,7 +41,7 @@ function statusBadgeClass(status) {
   return "border-gray-300 bg-gray-100 text-gray-700 dark:border-slate-600 dark:bg-slate-700/70 dark:text-slate-100";
 }
 
-function StatCard({ icon: Icon, label, value, hint, tone }) {
+function StatCard({ icon, label, value, hint, tone }) {
   const toneMap = {
     indigo: "bg-indigo-100 text-indigo-700",
     rose: "bg-rose-100 text-rose-700",
@@ -57,7 +57,7 @@ function StatCard({ icon: Icon, label, value, hint, tone }) {
           <p className="mt-1 text-xs text-gray-500">{hint}</p>
         </div>
         <div className={`rounded-xl p-2 ${toneMap[tone] || toneMap.indigo}`}>
-          <Icon className="h-5 w-5" />
+          {icon ? createElement(icon, { className: "h-5 w-5" }) : null}
         </div>
       </div>
     </div>

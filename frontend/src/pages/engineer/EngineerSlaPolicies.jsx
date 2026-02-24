@@ -49,6 +49,44 @@ function minutesToText(minutes) {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
+function priorityCardClasses(priority) {
+  const normalized = String(priority || "").toUpperCase();
+  if (normalized === "CRITICAL") {
+    return {
+      card: "border-red-300 bg-gradient-to-br from-red-50 to-rose-50 dark:border-red-500/40 dark:from-red-500/15 dark:to-rose-500/10",
+      title: "text-red-900 dark:text-red-100",
+      metaLabel: "text-red-700/80 dark:text-red-300/80",
+      metaValue: "text-red-900 dark:text-red-100",
+      desc: "text-red-800/90 dark:text-red-200"
+    };
+  }
+  if (normalized === "HIGH") {
+    return {
+      card: "border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 dark:border-amber-500/40 dark:from-amber-500/15 dark:to-orange-500/10",
+      title: "text-amber-900 dark:text-amber-100",
+      metaLabel: "text-amber-700/80 dark:text-amber-300/80",
+      metaValue: "text-amber-900 dark:text-amber-100",
+      desc: "text-amber-800/90 dark:text-amber-200"
+    };
+  }
+  if (normalized === "MEDIUM") {
+    return {
+      card: "border-blue-300 bg-gradient-to-br from-blue-50 to-cyan-50 dark:border-blue-500/40 dark:from-blue-500/15 dark:to-cyan-500/10",
+      title: "text-blue-900 dark:text-blue-100",
+      metaLabel: "text-blue-700/80 dark:text-blue-300/80",
+      metaValue: "text-blue-900 dark:text-blue-100",
+      desc: "text-blue-800/90 dark:text-blue-200"
+    };
+  }
+  return {
+    card: "border-slate-300 bg-gradient-to-br from-slate-50 to-gray-50 dark:border-slate-500/40 dark:from-slate-500/15 dark:to-gray-500/10",
+    title: "text-slate-900 dark:text-slate-100",
+    metaLabel: "text-slate-700/80 dark:text-slate-300/80",
+    metaValue: "text-slate-900 dark:text-slate-100",
+    desc: "text-slate-800/90 dark:text-slate-200"
+  };
+}
+
 export default function EngineerSlaPolicies() {
   const [policies, setPolicies] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -198,13 +236,15 @@ export default function EngineerSlaPolicies() {
           <div className="py-8 text-center text-sm text-gray-600">No SLA policies found for selected filters.</div>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {displayPolicies.map((policy) => (
+            {displayPolicies.map((policy) => {
+              const tone = priorityCardClasses(policy.priorityLevel);
+              return (
               <article
                 key={`${policy.projectId}-${policy.priorityLevel}`}
-                className="rounded-xl border border-gray-200 bg-gray-50 p-4"
+                className={`rounded-xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${tone.card}`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900">{policy.projectName || "-"}</p>
+                  <p className={`text-sm font-semibold ${tone.title}`}>{policy.projectName || "-"}</p>
                   <span
                     className={`inline-flex rounded-md px-2.5 py-1 text-xs font-semibold ${priorityPillClasses(
                       policy.priorityLevel
@@ -214,15 +254,16 @@ export default function EngineerSlaPolicies() {
                   </span>
                 </div>
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">Resolution Target</span>
-                  <span className="text-sm font-bold text-gray-900">{minutesToText(policy.resolutionTimeMinutes)}</span>
+                  <span className={`text-xs font-semibold uppercase tracking-wide ${tone.metaLabel}`}>Resolution Target</span>
+                  <span className={`text-sm font-bold ${tone.metaValue}`}>{minutesToText(policy.resolutionTimeMinutes)}</span>
                 </div>
                 <div className="mt-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Description</p>
-                  <p className="mt-1 text-sm text-gray-700">{policy.description || "-"}</p>
+                  <p className={`text-xs font-semibold uppercase tracking-wide ${tone.metaLabel}`}>Description</p>
+                  <p className={`mt-1 text-sm ${tone.desc}`}>{policy.description || "-"}</p>
                 </div>
               </article>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

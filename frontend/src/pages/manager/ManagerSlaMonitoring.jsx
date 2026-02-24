@@ -91,6 +91,8 @@ function resolutionToText(minutes) {
   return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
 }
 
+const PRIORITY_ORDER_MAP = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+
 function SummaryCard({ tone, label, value, icon: Icon }) {
   const styles =
     tone === "red"
@@ -218,7 +220,6 @@ export default function ManagerSlaMonitoring() {
     return map;
   }, [projects]);
 
-  const priorityOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
   const priorityCards = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
 
   const normalizedPolicies = useMemo(
@@ -250,7 +251,7 @@ export default function ManagerSlaMonitoring() {
         : normalizedPolicies.filter((p) => String(p.projectId) === String(rulesProjectId));
     return list.sort(
       (a, b) =>
-        (priorityOrder[a.priorityLevel] ?? 99) - (priorityOrder[b.priorityLevel] ?? 99)
+        (PRIORITY_ORDER_MAP[a.priorityLevel] ?? 99) - (PRIORITY_ORDER_MAP[b.priorityLevel] ?? 99)
     );
   }, [normalizedPolicies, rulesProjectId]);
 

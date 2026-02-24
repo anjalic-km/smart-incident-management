@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCcw } from "lucide-react";
 import { getAllProjects } from "../../api/projectApi";
 import { getAllUsers } from "../../api/userApi";
@@ -59,7 +59,7 @@ export default function ManagerWorkload() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchData = async ({ silent = false } = {}) => {
+  const fetchData = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     if (silent) setRefreshing(true);
     setError("");
@@ -101,11 +101,11 @@ export default function ManagerWorkload() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [user?.userId]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const selectedProjectIds = useMemo(() => {
     if (projectFilter === "ALL") {

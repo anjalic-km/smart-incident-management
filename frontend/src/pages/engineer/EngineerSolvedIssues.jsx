@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Layers3, RefreshCcw, ShieldCheck } from "lucide-react";
 import { getAllIssues } from "../../api/issuesApi";
 import { getAllProjects } from "../../api/projectApi";
@@ -71,7 +71,7 @@ function formatDateTime(value) {
   return `${datePart} ${timePart}`;
 }
 
-function SummaryCard({ icon: Icon, label, value, hint, tone }) {
+function SummaryCard({ icon, label, value, hint, tone }) {
   const tones = {
     indigo: {
       card: "border-indigo-200 bg-indigo-50 dark:border-indigo-500/30 dark:bg-indigo-500/10",
@@ -101,7 +101,7 @@ function SummaryCard({ icon: Icon, label, value, hint, tone }) {
       <div className="flex items-start justify-between gap-3">
         <p className={`text-xs font-semibold uppercase tracking-wide ${palette.label}`}>{label}</p>
         <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${palette.icon}`}>
-          <Icon className="h-5 w-5" />
+          {icon ? createElement(icon, { className: "h-5 w-5" }) : null}
         </span>
       </div>
       <p className={`mt-1 text-3xl font-extrabold ${palette.value}`}>{value}</p>

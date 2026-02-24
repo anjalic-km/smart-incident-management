@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   CalendarDays,
@@ -168,7 +168,7 @@ function splitMembersByRole(memberDetails, memberNames, userLookup) {
   };
 }
 
-function InfoCard({ icon: Icon, title, value, tone = "indigo" }) {
+function InfoCard({ icon, title, value, tone = "indigo" }) {
   const tones = {
     indigo: "bg-indigo-100 text-indigo-700",
     emerald: "bg-emerald-100 text-emerald-700",
@@ -182,7 +182,7 @@ function InfoCard({ icon: Icon, title, value, tone = "indigo" }) {
           <p className="mt-1 text-base font-semibold text-gray-900">{value}</p>
         </div>
         <div className={`rounded-lg p-2 ${tones[tone] || tones.indigo}`}>
-          <Icon className="h-4 w-4" />
+          {icon ? createElement(icon, { className: "h-4 w-4" }) : null}
         </div>
       </div>
     </div>
@@ -200,7 +200,7 @@ export default function UserProjectDetails() {
   const [search, setSearch] = useState("");
   const debugMode = new URLSearchParams(location.search).get("debug") === "1";
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -208,7 +208,6 @@ export default function UserProjectDetails() {
       const projectList = unwrapArrayData(projectRes);
       setProjects(projectList);
       if (debugMode) {
-        // eslint-disable-next-line no-console
         console.table(
           projectList.map((p) => ({
             id: p?.id,
@@ -236,11 +235,11 @@ export default function UserProjectDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debugMode]);
 
   useEffect(() => {
     fetchProjects();
-  }, [debugMode]);
+  }, [fetchProjects]);
 
   const filteredProjects = useMemo(() => {
     const q = search.trim().toLowerCase();

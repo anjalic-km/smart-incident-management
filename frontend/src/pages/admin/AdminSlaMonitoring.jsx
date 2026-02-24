@@ -85,6 +85,8 @@ function issueCode(issueId) {
   return `ISS-${String(num).padStart(3, "0")}`;
 }
 
+const PRIORITY_ORDER_MAP = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+
 function getRemainingMinutes(row) {
   const normalizedStatus = String(row?.slaStatus || "").toUpperCase();
   if (normalizedStatus === "RESOLVED_IN_SLA" || normalizedStatus === "BREACHED") {
@@ -230,7 +232,6 @@ export default function AdminSlaMonitoring() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [rows, projects]);
 
-  const priorityOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
   const priorityCards = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
 
   const normalizedPolicies = useMemo(
@@ -257,7 +258,7 @@ export default function AdminSlaMonitoring() {
         : normalizedPolicies.filter((p) => String(p.projectId) === String(rulesProjectFilter));
     return list.sort(
       (a, b) =>
-        (priorityOrder[a.priorityLevel] ?? 99) - (priorityOrder[b.priorityLevel] ?? 99)
+        (PRIORITY_ORDER_MAP[a.priorityLevel] ?? 99) - (PRIORITY_ORDER_MAP[b.priorityLevel] ?? 99)
     );
   }, [normalizedPolicies, rulesProjectFilter]);
 
@@ -398,7 +399,6 @@ export default function AdminSlaMonitoring() {
               <option value="AT_RISK">At Risk</option>
               <option value="BREACHED">Breached</option>
               <option value="RESOLVED_IN_SLA">Resolved In SLA</option>
-              <option value="NOT_STARTED">Not Started</option>
               <option value="NOT_STARTED">Not Started</option>
               <option value="UNKNOWN">Unavailable</option>
             </select>

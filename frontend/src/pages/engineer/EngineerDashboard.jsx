@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, FolderKanban, RefreshCcw, Ticket, TimerReset } from "lucide-react";
 import { getAllIssues, getIssueSlaStatus } from "../../api/issuesApi";
 import { getAllProjects } from "../../api/projectApi";
@@ -79,7 +79,75 @@ function matchesCurrentEngineer(issue, user) {
   return issueTokens.some((token) => identityTokens.includes(token));
 }
 
-function StatCard({ icon: Icon, label, value, hint, tone = "indigo" }) {
+function getUserIdentity(user) {
+  const userId = String(user?.userId || "").trim();
+  const tokens = new Set(
+    [user?.email, user?.username, user?.fullName, user?.name, user?.displayName]
+      .filter(Boolean)
+      .map((value) => String(value).toLowerCase())
+  );
+  return { userId, tokens };
+}
+
+function projectMemberMatches(member, identity) {
+  if (member == null) return false;
+  if (typeof member === "string" || typeof member === "number") {
+    const raw = String(member).trim();
+    if (!raw) return false;
+    return raw === identity.userId || identity.tokens.has(raw.toLowerCase());
+  }
+  const role = String(member?.role || member?.userRole || "").toUpperCase();
+  if (role && role !== "ENGINEER") return false;
+
+  const idCandidates = [member?.id, member?.userId, member?.memberId]
+    .filter((value) => value != null && String(value).trim() !== "")
+    .map((value) => String(value));
+  if (idCandidates.some((value) => value === identity.userId)) return true;
+
+  const textCandidates = [member?.email, member?.fullName, member?.name, member?.username]
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase());
+  return textCandidates.some((value) => identity.tokens.has(value));
+}
+
+function matchesEngineerProject(project, user) {
+  const identity = getUserIdentity(user);
+  if (!identity.userId && identity.tokens.size === 0) return false;
+
+  const detailGroups = [project?.memberDetails, project?.members, project?.engineers];
+  for (const group of detailGroups) {
+    if (!Array.isArray(group)) continue;
+    if (group.some((member) => projectMemberMatches(member, identity))) return true;
+  }
+
+  const idGroups = [project?.memberIds, project?.engineerIds];
+  for (const group of idGroups) {
+    if (!Array.isArray(group)) continue;
+    if (group.map((value) => String(value)).includes(identity.userId)) return true;
+  }
+
+  const nameGroups = [project?.memberNames, project?.engineerNames];
+  for (const group of nameGroups) {
+    if (!Array.isArray(group)) continue;
+    const normalized = group.map((value) => String(value).toLowerCase());
+    if (normalized.some((value) => identity.tokens.has(value))) return true;
+  }
+
+  return false;
+}
+
+function getIssueProjectMeta(issue) {
+  const rawId = issue?.projectId ?? issue?.project?.id ?? issue?.project?.projectId ?? null;
+  const projectId = rawId != null && String(rawId).trim() !== "" ? String(rawId) : "";
+  const projectName =
+    issue?.projectName ||
+    issue?.project?.name ||
+    issue?.project?.projectName ||
+    (projectId ? `Project #${projectId}` : "Unassigned Project");
+  return { projectId, projectName };
+}
+
+function StatCard({ icon, label, value, hint, tone = "indigo" }) {
   const tones = {
     indigo: "bg-indigo-100 text-indigo-700",
     blue: "bg-blue-100 text-blue-700",
@@ -96,7 +164,7 @@ function StatCard({ icon: Icon, label, value, hint, tone = "indigo" }) {
           <p className="mt-1 text-xs text-gray-500">{hint}</p>
         </div>
         <div className={`rounded-xl p-2 ${tones[tone] || tones.indigo}`}>
-          <Icon className="h-5 w-5" />
+          {icon ? createElement(icon, { className: "h-5 w-5" }) : null}
         </div>
       </div>
     </div>
@@ -177,15 +245,19 @@ function PriorityPieChart({ items, selectedPriority, onSelect }) {
     const largeArc = endDeg - startDeg > 180 ? 1 : 0;
     return `M ${center} ${center} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
   };
-  let currentAngle = -90;
-  const slices = items.map((item) => {
-    const sweep = (item.value / safeTotal) * 360;
-    const start = currentAngle;
-    const end = currentAngle + sweep;
-    const mid = start + sweep / 2;
-    currentAngle = end;
-    return { ...item, start, end, sweep, mid };
-  });
+  const slices = items.reduce(
+    (acc, item) => {
+      const sweep = (item.value / safeTotal) * 360;
+      const start = acc.currentAngle;
+      const end = start + sweep;
+      const mid = start + sweep / 2;
+      return {
+        currentAngle: end,
+        items: [...acc.items, { ...item, start, end, sweep, mid }]
+      };
+    },
+    { currentAngle: -90, items: [] }
+  ).items;
   return (
     <div className="flex h-full min-h-[360px] flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between">
@@ -323,7 +395,7 @@ export default function EngineerDashboard() {
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const fetchData = async ({ silent = false } = {}) => {
+  const fetchData = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     if (silent) setRefreshing(true);
     setError("");
@@ -332,8 +404,21 @@ export default function EngineerDashboard() {
       const allIssues = unwrapApiData(issuesRes);
       const allProjects = unwrapApiData(projectsRes);
 
-      const scoped = allIssues.filter((issue) => matchesCurrentEngineer(issue, user));
-      const sourceIssues = scoped.length > 0 ? scoped : allIssues;
+      const associatedProjects = allProjects.filter((project) => matchesEngineerProject(project, user));
+      const associatedProjectIds = new Set(
+        associatedProjects
+          .map((project) => (project?.id != null ? String(project.id) : ""))
+          .filter(Boolean)
+      );
+
+      const scopedByAssignee = allIssues.filter((issue) => matchesCurrentEngineer(issue, user));
+      const scopedByProject = allIssues.filter((issue) => {
+        const { projectId } = getIssueProjectMeta(issue);
+        return projectId ? associatedProjectIds.has(projectId) : false;
+      });
+      const sourceIssues = Array.from(
+        new Map([...scopedByAssignee, ...scopedByProject].map((issue) => [String(issue.id), issue])).values()
+      );
 
       const withSla = await Promise.all(
         sourceIssues.map(async (issue) => {
@@ -348,7 +433,18 @@ export default function EngineerDashboard() {
       );
 
       setIssues(withSla);
-      setProjects(allProjects);
+      if (associatedProjects.length > 0) {
+        setProjects(associatedProjects);
+      } else {
+        const fallbackProjectMap = new Map();
+        withSla.forEach((issue) => {
+          const { projectId, projectName } = getIssueProjectMeta(issue);
+          if (projectId) {
+            fallbackProjectMap.set(projectId, { id: projectId, name: projectName });
+          }
+        });
+        setProjects(Array.from(fallbackProjectMap.values()));
+      }
       setLastUpdated(new Date());
     } catch (err) {
       const msg = getApiMessage(err);
@@ -360,11 +456,11 @@ export default function EngineerDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const projectLoad = useMemo(() => {
     const map = new Map();
@@ -374,10 +470,11 @@ export default function EngineerDashboard() {
       map.set(pid, { projectId: pid, name: project?.name || `Project #${project.id}`, total: 0 });
     });
     issues.forEach((issue) => {
-      const pid = String(issue?.projectId || "UNKNOWN");
+      const { projectId, projectName } = getIssueProjectMeta(issue);
+      const pid = projectId || "UNKNOWN";
       const current = map.get(pid) || {
         projectId: pid,
-        name: issue?.projectName || "Unassigned Project",
+        name: projectName,
         total: 0
       };
       current.total += 1;
@@ -390,7 +487,8 @@ export default function EngineerDashboard() {
     const keys = ["CREATED", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
     const map = new Map();
     issues.forEach((issue) => {
-      const projectOk = selectedProject ? String(issue?.projectId || "") === selectedProject : true;
+      const { projectId } = getIssueProjectMeta(issue);
+      const projectOk = selectedProject ? projectId === selectedProject : true;
       const priorityOk = selectedPriority ? String(issue?.severity || "").toUpperCase() === selectedPriority : true;
       if (!projectOk || !priorityOk) return;
       const key = String(issue?.status || "UNKNOWN").toUpperCase();
@@ -403,7 +501,8 @@ export default function EngineerDashboard() {
     const keys = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
     const map = new Map();
     issues.forEach((issue) => {
-      const projectOk = selectedProject ? String(issue?.projectId || "") === selectedProject : true;
+      const { projectId } = getIssueProjectMeta(issue);
+      const projectOk = selectedProject ? projectId === selectedProject : true;
       const statusOk = selectedStatus ? String(issue?.status || "").toUpperCase() === selectedStatus : true;
       if (!projectOk || !statusOk) return;
       const key = String(issue?.severity || "UNKNOWN").toUpperCase();
@@ -415,7 +514,8 @@ export default function EngineerDashboard() {
   const filteredIssues = useMemo(() => {
     return issues
       .filter((issue) => {
-        const projectOk = selectedProject ? String(issue?.projectId || "") === selectedProject : true;
+        const { projectId } = getIssueProjectMeta(issue);
+        const projectOk = selectedProject ? projectId === selectedProject : true;
         const statusOk = selectedStatus ? String(issue?.status || "").toUpperCase() === selectedStatus : true;
         const priorityOk = selectedPriority ? String(issue?.severity || "").toUpperCase() === selectedPriority : true;
         return projectOk && statusOk && priorityOk;
@@ -432,7 +532,7 @@ export default function EngineerDashboard() {
   const totalCount = statusDistribution.reduce((sum, item) => sum + item.value, 0);
   const resolvedRate = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
   const breachedCount = issues.filter((issue) => String(issue?.slaStatus || "").toUpperCase() === "BREACHED").length;
-  const projectCount = new Set(issues.map((issue) => String(issue?.projectId || ""))).size;
+  const projectCount = useMemo(() => projects.length, [projects]);
 
   return (
     <div className="space-y-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -458,7 +558,7 @@ export default function EngineerDashboard() {
       {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-        <StatCard icon={FolderKanban} label="My Projects" value={projectCount} hint="Projects with assigned issues" tone="indigo" />
+        <StatCard icon={FolderKanban} label="My Projects" value={projectCount} hint="Projects associated with you" tone="indigo" />
         <StatCard icon={Ticket} label="My Issues" value={totalCount} hint="Total tracked for you" tone="blue" />
         <StatCard icon={AlertTriangle} label="Active Backlog" value={createdCount + openCount + inProgressCount} hint="Created + Open + In Progress" tone="amber" />
         <StatCard icon={CheckCircle2} label="Resolved Rate" value={`${resolvedRate}%`} hint={`${doneCount} resolved/closed`} tone="emerald" />
@@ -531,7 +631,7 @@ export default function EngineerDashboard() {
                 <tr key={issue.id} className="border-t border-gray-200">
                   <td className="px-4 py-3 font-semibold text-indigo-700">{issueCode(issue.id)}</td>
                   <td className="px-4 py-3 text-gray-900">{issue?.title || "-"}</td>
-                  <td className="px-4 py-3 text-gray-700">{issue?.projectName || "-"}</td>
+                  <td className="px-4 py-3 text-gray-700">{getIssueProjectMeta(issue).projectName || "-"}</td>
                   <td className="px-4 py-3 text-gray-700">{formatStatus(issue?.status)}</td>
                   <td className="px-4 py-3 text-gray-700">{formatStatus(issue?.severity)}</td>
                   <td className="px-4 py-3 text-gray-700">{formatStatus(issue?.slaStatus || "UNKNOWN")}</td>
@@ -559,4 +659,3 @@ export default function EngineerDashboard() {
     </div>
   );
 }
-

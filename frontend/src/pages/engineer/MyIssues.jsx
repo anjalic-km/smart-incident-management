@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, RefreshCcw } from "lucide-react";
 import { getAllIssues, getIssueSlaStatus, updateIssueStatus } from "../../api/issuesApi";
@@ -112,7 +112,7 @@ export default function MyIssues() {
   const [savingIssueId, setSavingIssueId] = useState(null);
   const [nowTs, setNowTs] = useState(Date.now());
 
-  const enrichIssuesWithSla = async (list) => {
+  const enrichIssuesWithSla = useCallback(async (list) => {
     return Promise.all(
       list.map(async (issue) => {
         try {
@@ -136,9 +136,9 @@ export default function MyIssues() {
         }
       })
     );
-  };
+  }, []);
 
-  const fetchIssues = async () => {
+  const fetchIssues = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -155,11 +155,11 @@ export default function MyIssues() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [enrichIssuesWithSla]);
 
   useEffect(() => {
     fetchIssues();
-  }, []);
+  }, [fetchIssues]);
 
   useEffect(() => {
     const timer = setInterval(() => setNowTs(Date.now()), 1000);

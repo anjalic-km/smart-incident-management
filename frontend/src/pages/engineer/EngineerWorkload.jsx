@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCcw } from "lucide-react";
 import { getAllProjects } from "../../api/projectApi";
 import { getAllIssues } from "../../api/issuesApi";
@@ -57,7 +57,7 @@ export default function EngineerWorkload() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchData = async ({ silent = false } = {}) => {
+  const fetchData = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     if (silent) setRefreshing(true);
     setError("");
@@ -92,11 +92,11 @@ export default function EngineerWorkload() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [user?.userId]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const projectsForFilter = useMemo(() => {
     const map = new Map();

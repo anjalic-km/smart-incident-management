@@ -61,7 +61,7 @@ export default function VerifyOtpModal({ email, purpose, onClose }) {
     } finally {
       setLoading(false);
     }
-  }, [email, purpose, onClose]);
+  }, [email, loading, onClose, purpose]);
 
   /* -------------------- AUTO SUBMIT -------------------- */
   useEffect(() => {

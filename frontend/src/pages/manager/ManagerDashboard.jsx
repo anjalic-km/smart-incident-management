@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, FolderKanban, RefreshCcw, Ticket, Users } from "lucide-react";
 import { getAllIssues } from "../../api/issuesApi";
 import { getAllProjects } from "../../api/projectApi";
 import { getAllUsers } from "../../api/userApi";
-import { useAuth } from "../../context/useAuth";
 import { showError } from "../../utils/toast";
 
 function getApiMessage(err) {
@@ -56,7 +55,7 @@ function getIssueAssignedTo(issue) {
   );
 }
 
-function StatCard({ icon: Icon, label, value, hint, tone = "indigo" }) {
+function StatCard({ icon, label, value, hint, tone = "indigo" }) {
   const tones = {
     indigo: "bg-indigo-100 text-indigo-700",
     blue: "bg-blue-100 text-blue-700",
@@ -72,7 +71,7 @@ function StatCard({ icon: Icon, label, value, hint, tone = "indigo" }) {
           <p className="mt-1 text-xs text-gray-500">{hint}</p>
         </div>
         <div className={`rounded-xl p-2 ${tones[tone] || tones.indigo}`}>
-          <Icon className="h-5 w-5" />
+          {icon ? createElement(icon, { className: "h-5 w-5" }) : null}
         </div>
       </div>
     </div>
@@ -157,15 +156,19 @@ function PriorityPieChart({ items, selectedPriority, onSelect }) {
     return `M ${center} ${center} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
   };
 
-  let currentAngle = -90;
-  const slices = items.map((item) => {
-    const sweep = (item.value / safeTotal) * 360;
-    const start = currentAngle;
-    const end = currentAngle + sweep;
-    const mid = start + sweep / 2;
-    currentAngle = end;
-    return { ...item, start, end, sweep, mid };
-  });
+  const slices = items.reduce(
+    (acc, item) => {
+      const sweep = (item.value / safeTotal) * 360;
+      const start = acc.currentAngle;
+      const end = start + sweep;
+      const mid = start + sweep / 2;
+      return {
+        currentAngle: end,
+        items: [...acc.items, { ...item, start, end, sweep, mid }]
+      };
+    },
+    { currentAngle: -90, items: [] }
+  ).items;
 
   return (
     <div className="flex h-full min-h-[360px] flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -306,7 +309,6 @@ function ProjectLoad({ items, selectedProject, onSelect }) {
 }
 
 export default function ManagerDashboard() {
-  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [issues, setIssues] = useState([]);

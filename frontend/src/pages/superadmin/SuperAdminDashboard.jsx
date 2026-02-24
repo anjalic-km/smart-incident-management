@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   Building2,
@@ -71,7 +71,7 @@ function humanizeToken(value) {
     .join(" ");
 }
 
-function StatCard({ icon: Icon, label, value, hint }) {
+function StatCard({ icon, label, value, hint }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -81,7 +81,7 @@ function StatCard({ icon: Icon, label, value, hint }) {
           <p className="mt-1 text-xs text-gray-500">{hint}</p>
         </div>
         <div className="rounded-xl bg-gray-100 p-2 text-gray-700">
-          <Icon className="h-5 w-5" />
+          {icon ? createElement(icon, { className: "h-5 w-5" }) : null}
         </div>
       </div>
     </div>
@@ -139,18 +139,21 @@ function StatusDonut({ values, selected, onSelect, isDark }) {
     { key: "disabled", label: "Disabled", value: values.disabled, color: "#f59e0b" },
     { key: "locked", label: "Locked", value: values.locked, color: "#ef4444" }
   ];
-  let currentAngle = -90;
-  const pieSlices = slices.map((slice) => {
-    const sweep = (slice.value / safeTotal) * 360;
-    const start = currentAngle;
-    const end = currentAngle + sweep;
-    const mid = start + sweep / 2;
-    currentAngle = end;
-    return { ...slice, start, end, sweep, mid };
-  });
+  const pieSlices = slices.reduce(
+    (acc, slice) => {
+      const sweep = (slice.value / safeTotal) * 360;
+      const start = acc.currentAngle;
+      const end = start + sweep;
+      const mid = start + sweep / 2;
+      return {
+        currentAngle: end,
+        items: [...acc.items, { ...slice, start, end, sweep, mid }]
+      };
+    },
+    { currentAngle: -90, items: [] }
+  ).items;
 
   const textPrimary = isDark ? "#F1F5F9" : "#0F172A";
-  const textSecondary = isDark ? "#94A3B8" : "#64748B";
   const hoverBg = isDark ? "rgba(30,41,59,0.8)" : "#F8FAFC";
   const selectedBg = (tone) =>
     isDark
