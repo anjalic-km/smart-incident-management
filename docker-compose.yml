@@ -1,0 +1,63 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:17
+    container_name: smart-postgres
+
+    restart: always
+
+    environment:
+      POSTGRES_DB: smart_ims
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test
+
+    ports:
+      - "5433:5433"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    image: anjalicn/smart-incident-backend:1.0
+
+    container_name: smart-backend
+
+    depends_on:
+      - postgres
+
+    restart: always
+
+    ports:
+      - "8081:8080"
+
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/smart_ims
+      DB_USERNAME: postgres
+      DB_PASSWORD: test
+
+      JWT_SECRET: smart-incident-management-secret-key-which-is-very-secure-123456
+      JWT_EXPIRATION: 3600000
+
+      MAIL_USERNAME: 0639c3a1aef383
+      MAIL_PASSWORD: 9a1992d3cc7997
+
+      GMAIL_USERNAME: anjalicmani77@gmail.com
+      GMAIL_PASSWORD: "ncjn qbrq yatg hkva"
+
+  frontend:
+    image: anjalicn/smart-incident-frontend:1.0
+
+    container_name: smart-frontend
+
+    depends_on:
+      - backend
+
+    restart: always
+
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
