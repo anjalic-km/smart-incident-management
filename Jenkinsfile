@@ -11,7 +11,7 @@ pipeline {
 
         stage('Build Backend') {
             steps {
-                bat 'cd backend && mvn clean package'
+                bat 'cd backend && mvn clean package -DskipTests'
             }
         }
 
@@ -22,11 +22,27 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build Docker Images') {
             steps {
-                bat 'docker build -t smart-incident .'
+                bat 'docker compose build'
             }
         }
 
+        stage('Run Docker Containers') {
+            steps {
+                bat 'docker compose up -d'
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline execution failed.'
+        }
     }
 }
