@@ -30,7 +30,7 @@ spec:
 
           env:
             - name: DB_URL
-              value: jdbc:postgresql://smart-postgres:5433/smart_ims
+              value: jdbc:postgresql://smart-postgres:5432/smart_ims
 
             - name: DB_USERNAME
               value: postgres
