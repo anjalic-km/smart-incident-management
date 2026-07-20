@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: smart-backend
+  labels:
+    app: smart-backend
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: smart-backend
+
+  template:
+    metadata:
+      labels:
+        app: smart-backend
+
+    spec:
+      containers:
+        - name: smart-backend
+
+          image: anjalicn/smart-incident-backend:1.0
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 8080
+
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://smart-postgres:5433/smart_ims
+
+            - name: DB_USERNAME
+              value: postgres
+
+            - name: DB_PASSWORD
+              value: test
+
+            - name: JWT_SECRET
+              value: smart-incident-management-secret-key-which-is-very-secure-123456
+
+            - name: JWT_EXPIRATION
+              value: "3600000"
+
+            - name: MAIL_USERNAME
+              value: "0639c3a1aef383"
+
+            - name: MAIL_PASSWORD
+              value: "9a1992d3cc7997"
+
+            - name: GMAIL_USERNAME
+              value: "anjalicmani77@gmail.com"
+
+            - name: GMAIL_PASSWORD
+              value: "ncjn qbrq yatg hkva"

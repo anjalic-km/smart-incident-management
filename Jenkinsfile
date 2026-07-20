@@ -24,16 +24,46 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                bat 'docker compose build'
+                bat 'docker build -t anjalicn/smart-incident-backend:1.0 backend'
+                bat 'docker build -t anjalicn/smart-incident-frontend:1.0 frontend'
             }
         }
 
-        stage('Run Docker Containers') {
+        stage('Push Docker Images') {
             steps {
-                bat 'docker compose up -d'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+
+                    bat 'docker push anjalicn/smart-incident-backend:1.0'
+                    bat 'docker push anjalicn/smart-incident-frontend:1.0'
+                }
             }
         }
 
+        stage('Deploy to Kubernetes') {
+            steps {
+                bat 'kubectl apply -f k8s/postgres-deployment.yaml'
+                bat 'kubectl apply -f k8s/postgres-service.yaml'
+
+                bat 'kubectl apply -f k8s/backend-deployment.yaml'
+                bat 'kubectl apply -f k8s/backend-service.yaml'
+
+                bat 'kubectl apply -f k8s/frontend-deployment.yaml'
+                bat 'kubectl apply -f k8s/frontend-service.yaml'
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                bat 'kubectl get pods'
+                bat 'kubectl get services'
+            }
+        }
     }
 
     post {

@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: smart-frontend
+  labels:
+    app: smart-frontend
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: smart-frontend
+
+  template:
+    metadata:
+      labels:
+        app: smart-frontend
+
+    spec:
+      containers:
+        - name: smart-frontend
+
+          image: anjalicn/smart-incident-frontend:1.0
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort:  5173

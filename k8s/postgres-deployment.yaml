@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-postgres
+  labels:
+    app: smart-postgres
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: smart-postgres
+
+  template:
+    metadata:
+      labels:
+        app: smart-postgres
+
+    spec:
+      containers:
+        - name: postgres
+
+          image: postgres:17
+
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 5432
+
+          env:
+            - name: POSTGRES_DB
+              value: smart_ims
+
+            - name: POSTGRES_USER
+              value: postgres
+
+            - name: POSTGRES_PASSWORD
+              value: test
+
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+
+      volumes:
+        - name: postgres-storage
+          emptyDir: {}
