@@ -26,11 +26,19 @@ pipeline {
         }
 
         stage('Push Docker Images') {
-            steps {
-                bat 'docker push anjalicn/smart-incident-backend:1.0'
-                bat 'docker push anjalicn/smart-incident-frontend:1.0'
-            }
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'dockerhub',
+            usernameVariable: 'DOCKER_USER',
+            passwordVariable: 'DOCKER_PASS'
+        )]) {
+            bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+            bat 'docker push anjalicn/smart-incident-backend:1.0'
+            bat 'docker push anjalicn/smart-incident-frontend:1.0'
+            bat 'docker logout'
         }
+    }
+}
 
         stage('Deploy to Kubernetes') {
             steps {
