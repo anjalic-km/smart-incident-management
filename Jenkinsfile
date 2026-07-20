@@ -30,11 +30,12 @@ pipeline {
         }
 
         stage('Push Docker Images') {
-    steps {
-        bat 'docker push anjalicn/smart-incident-backend:1.0'
-        bat 'docker push anjalicn/smart-incident-frontend:1.0'
-    }
-}
+            steps {
+                bat 'docker push anjalicn/smart-incident-backend:1.0'
+                bat 'docker push anjalicn/smart-incident-frontend:1.0'
+            }
+        }
+
         stage('Deploy to Kubernetes') {
             steps {
                 bat 'kubectl apply -f k8s/postgres-deployment.yaml'
