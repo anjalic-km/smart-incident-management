@@ -40,25 +40,6 @@ pipeline {
     }
 }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                bat 'kubectl apply -f k8s/postgres-deployment.yaml'
-                bat 'kubectl apply -f k8s/postgres-service.yaml'
-
-                bat 'kubectl apply -f k8s/backend-deployment.yaml'
-                bat 'kubectl apply -f k8s/backend-service.yaml'
-
-                bat 'kubectl apply -f k8s/frontend-deployment.yaml'
-                bat 'kubectl apply -f k8s/frontend-service.yaml'
-            }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                bat 'kubectl get pods'
-                bat 'kubectl get services'
-            }
-        }
     }
 
     post {
